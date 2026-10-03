@@ -1,5 +1,5 @@
 
-       import os
+import os
 import requests
 import google.generativeai as genai
 
