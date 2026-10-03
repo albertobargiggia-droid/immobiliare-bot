@@ -1,7 +1,7 @@
 import os
 import requests
 import google.generativeai as genai
-
+import json
 def generate_report():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -41,7 +41,7 @@ def generate_report():
             "• [AsteGiudiziarie.it](https://www.astegiudiziarie.it/)"
         )
     return response.text
-
+ 
 def send_telegram_message(text):
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -69,7 +69,11 @@ if __name__ == "__main__":
         report_text = generate_report()
     except Exception as e:
         report_text = f"⚠ *Notifica di Sistema Immobiliare*\n\nSi è verificato un avviso:\n`{str(e)}`\n\n✅ Sistema attivo."
-    
+   # Crea la cartella data se non esiste e salva il file per Streamlit
+    import json
+    os.makedirs("data", exist_ok=True)
+    with open("data/immobili.json", "w", encoding="utf-8") as f:
+        json.dump([{"titolo": "Ultimo Report Immobiliare", "testo": report_text}], f, ensure_ascii=False, indent=4)
     print("Invio dei singoli deal su Telegram in corso...")
     try:
         send_telegram_message(report_text)
