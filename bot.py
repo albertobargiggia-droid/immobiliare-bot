@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import requests
 import google.generativeai as genai
 
@@ -87,17 +88,22 @@ def format_telegram_message(data):
     return msg
 
 def send_telegram_message(text):
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
     
-    if not token or not chat_id:
+    if not raw_token or not chat_id:
         raise ValueError("Token o Chat ID di Telegram mancanti nelle variabili d'ambiente")
         
-    # Pulizia rigorosa del token ed esplicita costruzione dell'URL senza f-string rischiose
-    clean_token = str(token).strip().replace(" ", "").replace("[", "").replace("]", "").replace("(", "").replace(")", "")
+    # Estrazione automatica del token valido tramite Regex (ignora eventuali markdown/url incollati per errore)
+    match = re.search(r'\d+:[A-Za-z0-9_-]+', raw_token)
+    if match:
+        clean_token = match.group(0)
+    else:
+        clean_token = raw_token.strip().replace(" ", "").replace("[", "").replace("]", "").replace("(", "").replace(")", "")
+        
     clean_chat_id = str(chat_id).strip().replace(" ", "")
     
-    url = "[https://api.telegram.org/bot](https://api.telegram.org/bot)" + clean_token + "/sendMessage"
+    url = f"[https://api.telegram.org/bot](https://api.telegram.org/bot){clean_token}/sendMessage"
     
     max_length = 4000
     for i in range(0, len(text), max_length):
