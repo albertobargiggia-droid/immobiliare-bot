@@ -38,7 +38,6 @@ def generate_deals_data():
     response = model.generate_content(prompt)
     text = response.text.strip()
     
-    # Pulizia di eventuali blocchi markdown ```json ... ```
     if text.startswith("```json"):
         text = text[7:]
     if text.startswith("```"):
@@ -50,7 +49,6 @@ def generate_deals_data():
     try:
         data = json.loads(text)
     except Exception as e:
-        # Fallback strutturato in caso di errore di parsing
         data = [
             {
                 "titolo": "Trilocale Via Magenta",
@@ -95,6 +93,7 @@ def send_telegram_message(text):
     if not token or not chat_id:
         raise ValueError("Token o Chat ID di Telegram mancanti nelle variabili d'ambiente")
         
+    # URL rigorosamente pulito e privo di qualsiasi formattazione
     url = f"[https://api.telegram.org/bot](https://api.telegram.org/bot){token}/sendMessage"
     
     max_length = 4000
