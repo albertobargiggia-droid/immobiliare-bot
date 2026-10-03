@@ -1,5 +1,5 @@
-requests
-google-generativeairequests
 streamlit
 pandas
 requests
+google-genai
+beautifulsoup4
