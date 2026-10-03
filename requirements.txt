@@ -1,2 +1,5 @@
 requests
 google-generativeairequests
+streamlit
+pandas
+requests
