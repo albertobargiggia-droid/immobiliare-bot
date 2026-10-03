@@ -1,0 +1,30 @@
+name: Daily Real Estate Report
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # Gira tutti i giorni alle 07:00 UTC (08:00 ora italiana)
+  workflow_dispatch: # Permette di avviarlo a mano quando vuoi con un click
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests google-generativeai
+
+      - name: Run bot script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python bot.py
