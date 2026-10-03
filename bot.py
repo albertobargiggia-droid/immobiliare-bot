@@ -14,26 +14,40 @@ def manda_messaggio_telegram(testo):
         "text": testo,
         "parse_mode": "Markdown"
     }
-    requests.post(url, json=payload)
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"Errore nell'invio del messaggio Telegram: {e}")
 
 def main():
+    if not GEMINI_API_KEY or not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Errore critico: Mancano le chiavi segrete (Secrets) su GitHub.")
+        return
+
     # 1. Configurazione di Google Gemini
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel("gemini-1.5-flash")
 
-    # 2. Chiediamo a Gemini di generare un report di mercato immobiliare a Milano e aste
+    # 2. Aree geografiche mirate aggiornate con Trezzano
+    zone_target = "Milano, Milano Cintura Sud, Hinterland di Milano, Rho, Pero, Opera, Pavia e Trezzano"
+
+    # 3. Prompt dettagliato con le zone e il focus sulle aste giudiziarie (PVP) e mercato
     prompt = (
-        "Agisci come un analista immobiliare esperto a Milano. "
-        "Genera un report giornaliero di esempio per il mercato immobiliare residenziale a Milano "
-        "e per le aste giudiziarie (PVP), evidenziando 2 ipotetiche occasioni con ribassi di prezzo "
-        "interessanti o immobili sottovalutati. Sii sintetico, professionale e usa una formattazione pulita per Telegram."
+        f"Agisci come un analista immobiliare esperto focalizzato rigorosamente su queste aree: {zone_target}. "
+        "Genera un report di mercato strutturato e professionale analizzando le tendenze, le opportunità di acquisto, "
+        "i ribassi di prezzo e le aste giudiziarie (PVP - Portale Vendite Pubbliche) rilevanti per queste specifiche zone. "
+        "Sii sintetico, chiaro e usa una formattazione pulita ottimizzata per Telegram."
     )
 
-    response = model.generate_content(prompt)
-    report_analizzato = response.text
+    try:
+        response = model.generate_content(prompt)
+        report_analizzato = response.text
+    except Exception as e:
+        report_analizzato = f"Errore durante la generazione del report con l'intelligenza artificiale: {e}"
 
-    # 3. Invio del report su Telegram
-    testo_finale = f"🏠 *REPORT IMMOBILIARE GIORNALIERO (Milano)*\n\n{report_analizzato}"
+    # 4. Invio del report mirato su Telegram
+    testo_finale = f"🏠 *REPORT IMMOBILIARE MIRATO*\n📍 *Zone:* {zone_target}\n\n{report_analizzato}"
     manda_messaggio_telegram(testo_finale)
 
 if __name__ == "__main__":
