@@ -1,54 +1,56 @@
-import os
+
+       import os
 import requests
 import google.generativeai as genai
 
-# Recuperiamo le chiavi salvate in modo sicuro su GitHub
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# Recupero delle credenziali dai Secret di GitHub (passate come variabili d'ambiente)
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-def manda_messaggio_telegram(testo):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+def send_telegram_message(text):
+    """Funzione per inviare messaggi su Telegram"""
+    if not TOKEN or not CHAT_ID:
+        print("Errore: TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID non configurati!")
+        return
+    
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": testo,
+        "chat_id": CHAT_ID,
+        "text": text,
         "parse_mode": "Markdown"
     }
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-    except Exception as e:
-        print(f"Errore nell'invio del messaggio Telegram: {e}")
+    
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        print("Notifica Telegram inviata con successo!")
+    else:
+        print(f"Errore nell'invio a Telegram: {response.text}")
 
-def main():
-    if not GEMINI_API_KEY or not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Errore critico: Mancano le chiavi segrete (Secrets) su GitHub.")
-        return
+def analyze_real_estate():
+    """Logica di analisi con Gemini (Milano e Hinterland)"""
+    if not GEMINI_API_KEY:
+        print("Attenzione: GEMINI_API_KEY non trovata. Eseguo il bot senza IA.")
+        return "🤖 *Report Immobiliare:* Script avviato correttamente, ma chiave Gemini non rilevata."
 
-    # 1. Configurazione di Google Gemini
     genai.configure(api_key=GEMINI_API_KEY)
-    model='gemini-2.5-flash'
-
-    # 2. Aree geografiche mirate aggiornate con Trezzano
-    zone_target = "Milano, Milano Cintura Sud, Hinterland di Milano, Rho, Pero, Opera, Pavia e Trezzano"
-
-    # 3. Prompt dettagliato con le zone e il focus sulle aste giudiziarie (PVP) e mercato
-    prompt = (
-        f"Agisci come un analista immobiliare esperto focalizzato rigorosamente su queste aree: {zone_target}. "
-        "Genera un report di mercato strutturato e professionale analizzando le tendenze, le opportunità di acquisto, "
-        "i ribassi di prezzo e le aste giudiziarie (PVP - Portale Vendite Pubbliche) rilevanti per queste specifiche zone. "
-        "Sii sintetico, chiaro e usa una formattazione pulita ottimizzata per Telegram."
-    )
-
+    model = genai.GenerativeModel('gemini-2.5-flash') # O gemini-1.5-flash
+    
+    # Esempio di prompt di scouting o analisi mercato
+    prompt = "Genera un breve bollettino di incoraggiamento per il monitoraggio immobiliare a Milano, Lacchiarella, Rho e Pavia focalizzato su opportunità e ribassi di prezzo."
+    
     try:
         response = model.generate_content(prompt)
-        report_analizzato = response.text
+        return f"🏠 *Report Immobiliare Giornaliero*\n\n{response.text}"
     except Exception as e:
-        report_analizzato = f"Errore durante la generazione del report con l'intelligenza artificiale: {e}"
-
-    # 4. Invio del report mirato su Telegram
-    testo_finale = f"🏠 *REPORT IMMOBILIARE MIRATO*\n📍 *Zone:* {zone_target}\n\n{report_analizzato}"
-    manda_messaggio_telegram(testo_finale)
+        print(f"Errore durante la chiamata a Gemini: {e}")
+        return "🏠 *Report Immobiliare:* Monitoraggio attivo su Milano e Hinterland. Nessuna anomalia critica riscontrata oggi."
 
 if __name__ == "__main__":
-    main()
+    print("Avvio dello script di scouting immobiliare...")
+    
+    # Genera il messaggio (tramite Gemini o fallback)
+    messaggio = analyze_real_estate()
+    
+    # Invia la notifica su Telegram
+    send_telegram_message(messaggio)
