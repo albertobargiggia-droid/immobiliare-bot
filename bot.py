@@ -63,8 +63,7 @@ def send_telegram_message(text):
         response = requests.post(url, json=payload)
         response.raise_for_status()
 
-
-   if __name__ == "__main__":
+if __name__ == "__main__":
     print("Generazione del report immobiliare in corso...")
     try:
         report_text = generate_report()
