@@ -8,8 +8,8 @@ def generate_report():
         raise ValueError("GEMINI_API_KEY non impostata nelle variabili d'ambiente di GitHub Secrets")
     
     genai.configure(api_key=api_key)
-    # Modello impostato su gemini-2.0-flash
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    # Modello aggiornato esattamente alla versione richiesta dall'API di Google
+    model = genai.GenerativeModel("gemini-3.8-flash")
     
     prompt = (
         "Genera un report immobiliare giornaliero dettagliato, strutturato e professionale focalizzato sulle opportunità, "
