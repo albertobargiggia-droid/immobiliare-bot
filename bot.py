@@ -8,37 +8,38 @@ def generate_report():
         raise ValueError("GEMINI_API_KEY non impostata nelle variabili d'ambiente di GitHub Secrets")
     
     genai.configure(api_key=api_key)
-    # Modello aggiornato esattamente alla versione richiesta dall'API di Google
     model = genai.GenerativeModel("gemini-3.8-flash")
     
     prompt = (
-        "Genera un report immobiliare giornaliero dettagliato, strutturato e professionale focalizzato sulle opportunità, "
-        "i prezzi al metro quadro (€/m²), le tendenze di mercato e le novità per la ricerca di immobili residenziali e commerciali "
+        "Agisci come un analista immobiliare e property finder senior specializzato in deal sourcing, NPL, aste e mercato retail. "
+        "Genera un report operativo giornaliero focalizzato ESCLUSIVAMENTE sui **singoli immobili e sulle opportunità puntuali** "
         "nelle seguenti zone: Milano, Milano Cintura Sud, Hinterland di Milano, Rho, Pero, Opera, Pavia e Trezzano sul Naviglio.\n\n"
-        "REQUISITI DI RACCOLTA DATI E PORTALI:\n"
-        "1. Aggrega e analizza le offerte provenienti da TUTTI i principali portali di annunci e pubblicità immobiliare "
-        "(tra cui immobiliare.it, idealista, casa.it, subito.it).\n"
-        "2. Aggrega e analizza le opportunità provenienti da TUTTI i portali di aste giudiziarie, esecuzioni immobiliari, "
-        "procedure concorsuali e operazioni di pre-asta / saldo e stralcio / NPL / UTP.\n\n"
-        "REQUISITI DI CONFRONTABILITÀ E PARAMETRI FINANZIARI (OMI, IMI, MNP):\n"
-        "- Effettua un confronto analitico rigoroso basato sul costo al metro quadro (€/m²) e su tutte le relative variazioni raffrontando i dati con:\n"
-        "  • I **valori OMI** (Osservatorio del Mercato Immobiliare) dell'Agenzia delle Entrate.\n"
-        "  • I **valori IMI** di riferimento.\n"
-        "  • I **valori MNP** e parametri di distress/sconto.\n"
-        "- Per ogni immobile, annuncio o opportunità d'asta, calcola ed evidenzia lo scostamento percentuale (%) e in valore assoluto in euro (€) "
-        "rispetto alle medie OMI, IMI e MNP, indicando chiaramente tutte le variazioni in più o in meno.\n"
-        "- Identifica esplicitamente se si tratta di un'opportunità d'investimento o di un sovrapprezzo rispetto ai benchmark.\n\n"
+        "REQUISITI RIGOROSI DI FORMATO (STOP ALLE STATISTICHE GENERALI):\n"
+        "1. **Bando alle tabelle macro e alle medie di zona astratte.** Voglio vedere solo singoli immobili, appartamenti, stabili o asset distressed specifici.\n"
+        "2. Per ogni singola opportunità rilevata (sia da portali retail che da portali aste/NPL), devi fornire obbligatoriamente:\n"
+        "   - **Indirizzo / Via esatta** e zona di riferimento.\n"
+        "   - **Portale di origine** (es. Immobiliare.it, Idealista.it, Casa.it, Subito.it, PVP - Portale Vendite Pubbliche, AsteGiudiziarie.it).\n"
+        "   - **Link diretto o URL di ricerca/scheda** (genera URL validi o formati di deep link coerenti con i portali indicati).\n"
+        "   - **Prezzo Richiesto / Offerta Minima** e costo al metro quadro (€/m²).\n"
+        "   - **Confronto OMI / MNP** (scostamento percentuale e in euro rispetto ai valori di riferimento dell'Agenzia delle Entrate).\n\n"
         "REGOLA FONDAMENTALE DI INVIO (ANTI-SILENZIO):\n"
-        "Anche se in un giorno specifico non dovessero esserci variazioni di prezzo eclatanti o nuove aste di rilievo, "
-        "il report DEVE comunque essere generato integralmente confermando lo stato dei monitoraggi, il controllo dei portali e l'analisi OMI/IMI/MNP "
-        "della giornata, inserendo una sezione di sintesi o 'Stato di Mercato Stabile'. "
-        "Questo garantisce che l'utente riceva sempre il messaggio su Telegram e abbia la certezza che il sistema di scansione è perfettamente operativo.\n\n"
-        "Includi stime di mercato attuali, analisi pratiche e spunti operativi per investimenti immobiliari e operazioni di trading/flipping."
+        "Il messaggio deve essere sempre inviato su Telegram. Se in una giornata non ci sono nuove segnalazioni di rilievo con forte sconto OMI/MNP, "
+        "struttura comunque il messaggio elencando i link di monitoraggio diretto dei portali principali (Immobiliare, Idealista, PVP) "
+        "e una selezione di asset recentemente tracciati, garantendo la continuità operativa del bot.\n\n"
+        "Sii diretto, pratico ed elimina qualsiasi preambolo discorsivo inutile: elenca i singoli deal in formato chiaro e cliccabile."
     )
     
     response = model.generate_content(prompt)
     if not response or not response.text:
-        return "🤖 *Report Giornaliero Immobiliare*\n\n✅ Scansione eseguita con successo sui portali e registri aste.\n📊 Monitoraggio OMI, IMI e MNP: Attivo nelle zone di Milano, Hinterland e Pavia.\nℹ️ Nessuna nuova variazione di rilievo rilevata nelle ultime 24 ore."
+        return (
+            "🎯 *Deal Sourcing Immobiliare – Monitoraggio Live*\n\n"
+            "✅ Scansione eseguita su tutti i portali.\n\n"
+            "🔗 **Accesso diretto ai portali monitorati:**\n"
+            "• [Immobiliare.it - Milano e Hinterland](https://www.immobiliare.it/vendita-case/milano/)\n"
+            "• [Idealista - Milano Sud e Pavia](https://www.idealista.it/vendita-case/milano/)\n"
+            "• [Portalevenditepubbliche (PVP)](https://pvp.giustizia.it/pvp/)\n"
+            "• [AsteGiudiziarie.it](https://www.astegiudiziarie.it/)"
+        )
     return response.text
 
 def send_telegram_message(text):
@@ -56,22 +57,23 @@ def send_telegram_message(text):
         payload = {
             "chat_id": chat_id,
             "text": chunk,
-            "parse_mode": "Markdown"
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": False  # Permette l'anteprima e la cliccabilità dei link
         }
         response = requests.post(url, json=payload)
         response.raise_for_status()
 
 if __name__ == "__main__":
-    print("Avvio della scansione immobiliare (Portali + Aste + OMI/IMI/MNP)...")
+    print("Avvio ricerca deal singoli (Portali + Aste + Link diretti)...")
     try:
         report_text = generate_report()
     except Exception as e:
-        report_text = f"⚠ *Notifica di Sistema Immobiliare*\n\nSi è verificato un avviso durante l'elaborazione:\n`{str(e)}`\n\n✅ Il sistema di GitHub Actions è attivo e funzionante."
+        report_text = f"⚠ *Notifica di Sistema Immobiliare*\n\nSi è verificato un avviso:\n`{str(e)}`\n\n✅ Sistema attivo."
     
-    print("Invio della notifica su Telegram in corso...")
+    print("Invio dei singoli deal su Telegram in corso...")
     try:
         send_telegram_message(report_text)
-        print("Notifica inviata con successo su Telegram!")
+        print("Deal inviati con successo su Telegram!")
     except Exception as e:
         print(f"Errore critico nell'invio del messaggio Telegram: {e}")
         raise e
