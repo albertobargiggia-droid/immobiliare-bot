@@ -93,14 +93,17 @@ def send_telegram_message(text):
     if not token or not chat_id:
         raise ValueError("Token o Chat ID di Telegram mancanti nelle variabili d'ambiente")
         
-    # URL rigorosamente pulito e privo di qualsiasi formattazione
-    url = f"[https://api.telegram.org/bot](https://api.telegram.org/bot){token}/sendMessage"
+    # Pulizia rigorosa del token ed esplicita costruzione dell'URL senza f-string rischiose
+    clean_token = str(token).strip().replace(" ", "").replace("[", "").replace("]", "").replace("(", "").replace(")", "")
+    clean_chat_id = str(chat_id).strip().replace(" ", "")
+    
+    url = "[https://api.telegram.org/bot](https://api.telegram.org/bot)" + clean_token + "/sendMessage"
     
     max_length = 4000
     for i in range(0, len(text), max_length):
         chunk = text[i:i+max_length]
         payload = {
-            "chat_id": chat_id,
+            "chat_id": clean_chat_id,
             "text": chunk,
             "parse_mode": "Markdown",
             "disable_web_page_preview": False
