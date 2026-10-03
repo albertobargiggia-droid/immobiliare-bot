@@ -1,0 +1,17 @@
+# ⚙️ Guida alla Manutenzione, Orari e Test Manuali
+
+> **Riferimento Rapido:** Istruzioni passo-passo per modificare la frequenza di invio del bot ed eseguire test manuali su richiesta.
+
+---
+
+## 1. Come Modificare l'Orario di Invio Automatico
+
+Il bot è programmato per avviarsi da solo ogni giorno. Se desideri cambiare l'orario o la frequenza:
+
+1. Vai sul tuo repository su GitHub e naviga nella cartella **`.github`** -> **`workflows`**.
+2. Apri il file **`run_bot.yml`**.
+3. Clicca sull'icona della matita (**Edit this file**) in alto a destra per modificarlo.
+4. Cerca la sezione `schedule` e modifica i valori della riga `cron`:
+   ```yaml
+   schedule:
+     - cron: '0 8 * * *'
