@@ -94,12 +94,15 @@ def send_telegram_message(text):
     if not raw_token or not chat_id:
         raise ValueError("Token o Chat ID di Telegram mancanti nelle variabili d'ambiente")
         
-    # Estrazione automatica del token valido tramite Regex (ignora eventuali markdown/url incollati per errore)
-    match = re.search(r'\d+:[A-Za-z0-9_-]+', raw_token)
+    # Rimuove completamente qualsiasi formattazione markdown eventualmente incollata nel Secret di GitHub
+    clean_token = re.sub(r'\[.*?\]\(.*?\)', '', raw_token)
+    clean_token = clean_token.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+    
+    match = re.search(r'\d+:[A-Za-z0-9_-]+', clean_token)
     if match:
         clean_token = match.group(0)
     else:
-        clean_token = raw_token.strip().replace(" ", "").replace("[", "").replace("]", "").replace("(", "").replace(")", "")
+        clean_token = clean_token.strip().replace(" ", "")
         
     clean_chat_id = str(chat_id).strip().replace(" ", "")
     
