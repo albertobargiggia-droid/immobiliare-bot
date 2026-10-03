@@ -1,0 +1,17 @@
+# 🚀 Guida Rapida: Come Avviare Manualmente la Scansione
+
+> **Riferimento:** Procedura passo-passo per lanciare immediatamente il bot immobiliare su GitHub senza attendere l'orario pianificato.
+
+---
+
+## Come lanciare la scansione manuale su GitHub
+
+Se vuoi forzare un'esecuzione immediata del bot e ricevere subito il report aggiornato su Telegram:
+
+1. Apri il tuo browser e vai sul repository GitHub del progetto: [github.com/alberto-bargiggia-droid/immobiliare-bot](https://github.com/alberto-bargiggia-droid/immobiliare-bot).
+2. Nella barra dei menu in alto nel repository, clicca sulla scheda **Actions**.
+3. Nella colonna di sinistra, seleziona il workflow desiderato: **Daily Real Estate Report**.
+4. Nella parte destra della pagina (sopra la cronologia degli esecuzioni passate), clicca sul menu a tendina **Run workflow**.
+5. Conferma cliccando sul pulsante verde **Run workflow**.
+6. L'operazione partirà all'istante: vedrai comparire un'icona di caricamento in corso e, nel giro di pochissimi secondi, il bot invierà il nuovo report direttamente alla tua chat Telegram (`@milano_immobili_bot`).
+7.
