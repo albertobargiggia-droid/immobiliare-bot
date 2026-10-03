@@ -27,7 +27,7 @@ def main():
 
     # 1. Configurazione di Google Gemini
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model='gemini-2.5-flash'
 
     # 2. Aree geografiche mirate aggiornate con Trezzano
     zone_target = "Milano, Milano Cintura Sud, Hinterland di Milano, Rho, Pero, Opera, Pavia e Trezzano"
