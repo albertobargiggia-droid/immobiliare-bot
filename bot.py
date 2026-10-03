@@ -8,7 +8,8 @@ def generate_report():
         raise ValueError("GEMINI_API_KEY non impostata nelle variabili d'ambiente di GitHub Secrets")
     
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    # Aggiornato al modello richiesto dall'API di Google
+    model = genai.GenerativeModel("gemini-3.8-flash")
     
     prompt = (
         "Genera un report immobiliare giornaliero dettagliato, strutturato e professionale focalizzato sulle opportunità, "
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     try:
         report_text = generate_report()
     except Exception as e:
-        report_text = f"⚠️️ *Notifica di Sistema Immobiliare*\n\nSi è verificato un avviso minore durante l'elaborazione del report:\n`{str(e)}`\n\n✅ Il sistema di GitHub Actions è attivo e funzionante."
+        report_text = f"⚠ *Notifica di Sistema Immobiliare*\n\nSi è verificato un avviso durante l'elaborazione:\n`{str(e)}`\n\n✅ Il sistema di GitHub Actions è attivo e funzionante."
     
     print("Invio della notifica su Telegram in corso...")
     try:
