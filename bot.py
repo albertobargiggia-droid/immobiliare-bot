@@ -57,27 +57,30 @@ def send_telegram_message(text):
         payload = {
             "chat_id": chat_id,
             "text": chunk,
-            "parse_mode": "Markdown",
+            
             "disable_web_page_preview": False  # Permette l'anteprima e la cliccabilità dei link
         }
         response = requests.post(url, json=payload)
         response.raise_for_status()
 
-if __name__ == "__main__":
-    print("Avvio ricerca deal singoli (Portali + Aste + Link diretti)...")
+
+   if __name__ == "__main__":
+    print("Generazione del report immobiliare in corso...")
     try:
         report_text = generate_report()
     except Exception as e:
-        report_text = f"⚠ *Notifica di Sistema Immobiliare*\n\nSi è verificato un avviso:\n`{str(e)}`\n\n✅ Sistema attivo."
-   # Crea la cartella data se non esiste e salva il file per Streamlit
+        report_text = f"Notifica di Sistema Immobiliare: Si e verificato un avviso: {str(e)}"
+
+    # Salva SEMPRE i dati per la dashboard di Streamlit nella cartella data
     import json
+    import os
     os.makedirs("data", exist_ok=True)
     with open("data/immobili.json", "w", encoding="utf-8") as f:
         json.dump([{"titolo": "Ultimo Report Immobiliare", "testo": report_text}], f, ensure_ascii=False, indent=4)
-    print("Invio dei singoli deal su Telegram in corso...")
+    print("File immobili.json salvato con successo per Streamlit!")
+
+    print("Invio del report su Telegram...")
     try:
         send_telegram_message(report_text)
-        print("Deal inviati con successo su Telegram!")
     except Exception as e:
-        print(f"Errore critico nell'invio del messaggio Telegram: {e}")
-        raise e
+        print(f"Avviso Telegram: {e}")
