@@ -88,23 +88,23 @@ def format_telegram_message(data):
     return msg
 
 def send_telegram_message(text):
-    raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+    raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     
     if not raw_token or not chat_id:
         raise ValueError("Token o Chat ID di Telegram mancanti nelle variabili d'ambiente")
         
-    # Rimuove completamente qualsiasi formattazione markdown eventualmente incollata nel Secret di GitHub
-    clean_token = re.sub(r'\[.*?\]\(.*?\)', '', raw_token)
-    clean_token = clean_token.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
-    
-    match = re.search(r'\d+:[A-Za-z0-9_-]+', clean_token)
+    # Estrazione chirurgica: individua esattamente il pattern del token Telegram (es. 123456789:ABCdef...)
+    match = re.search(r'(\d{8,12}:[A-Za-z0-9_-]{30,})', raw_token)
     if match:
-        clean_token = match.group(0)
+        clean_token = match.group(1)
     else:
-        clean_token = clean_token.strip().replace(" ", "")
+        # Fallback di pulizia totale se il pattern non matcha perfettamente
+        clean_token = re.sub(r'https?://[^\s)]+', '', raw_token)
+        clean_token = re.sub(r'[\[\]\(\)\*\_]', '', clean_token).strip()
+        clean_token = clean_token.split()[-1] if clean_token.split() else clean_token
         
-    clean_chat_id = str(chat_id).strip().replace(" ", "")
+    clean_chat_id = chat_id.strip().replace(" ", "")
     
     url = f"[https://api.telegram.org/bot](https://api.telegram.org/bot){clean_token}/sendMessage"
     
