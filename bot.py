@@ -13,7 +13,7 @@ MODELLO_AI = "gemini-1.5-flash"
 
 
 def generate_deals_data():
-  """Genera i deal tramite Gemini con gestione rigorosa degli errori."""
+  """Genera i deal tramite Gemini con coordinate, link mirati e gestione errori."""
   api_key = os.environ.get("GEMINI_API_KEY")
   if not api_key:
     print("ERRORE CRITICO: GEMINI_API_KEY non impostata nelle segrete di GitHub.")
@@ -34,6 +34,9 @@ def generate_deals_data():
     - Prezzo massimo di acquisto: <= €300.000.
     - Margine MNP netto: tra €20.000 e €50.000 (per esborso base €100.000).
     - ROI atteso: >= 25-30%.
+    - Includi coordinate geografiche realistiche (latitudine e longitudine) per l'indirizzo indicato.
+    - Includi un campo "colore_mappa" basato sul margine: "green" se margine >= 40000, "orange" se tra 30000 e 39999, "red" se < 30000.
+    - IMPORTANTE per il campo "link": genera un URL di ricerca mirato e plausibile del portale di riferimento (es. Immobiliare.it o PVP Aste) pre-filtrato per la zona e la tipologia, in modo da indirizzare direttamente l'utente ai risultati coerenti.
     - Includi segnali di UTP/ribassi sequenziali, dati aste (se giudiziari: 1°, 2°, 3° battuta, data asta, link perizia CTU e planimetria), link OMI Agenzia delle Entrate con indice di liquidità e trend %.
 
     DEVI RESTITUIRE ESCLUSIVAMENTE UN ARRAY JSON VALIDO (formato JSON puro, senza testo discorsivo prima o dopo, racchiuso o meno da blocchi markdown).
@@ -44,7 +47,7 @@ def generate_deals_data():
         "indirizzo": "Via Roma 10, Rho (MI)",
         "zona": "Rho",
         "portale": "PVP Aste / Immobiliare.it",
-        "link": "[https://www.immobiliare.it/](https://www.immobiliare.it/)",
+        "link": "https://www.immobiliare.it/vendita-case/rho/?criterio=rilevanza",
         "canale": "Asta / Procedura Giudiziaria",
         "stato_giudiziario": "NPL / Asta Giudiziaria",
         "storico_ribassi": "Ribassato 3 volte",
@@ -52,14 +55,17 @@ def generate_deals_data():
         "dettagli_debiti": "Decreto ingiuntivo condominiale",
         "stato_asta": "Seconda battuta",
         "data_asta": "2026-11-15",
-        "link_perizia_ctu": "[https://pvp.giustizia.it/](https://pvp.giustizia.it/)",
-        "link_planimetria": "[https://pvp.giustizia.it/](https://pvp.giustizia.it/)",
+        "link_perizia_ctu": "https://pvp.giustizia.it/",
+        "link_planimetria": "https://pvp.giustizia.it/",
         "prezzo": 120000,
         "superficie_mq": 80,
         "prezzo_mq": 1500,
         "delta_omi_percento": -30.0,
         "margine_mnp": 35000,
-        "link_omi": "[https://www.agenziaentrate.gov.it/portale/schede/fabbricateritreni/omi/consultazione-quotazioni-immobiliari](https://www.agenziaentrate.gov.it/portale/schede/fabbricateritreni/omi/consultazione-quotazioni-immobiliari)",
+        "lat": 45.5212,
+        "lon": 9.0321,
+        "colore_mappa": "orange",
+        "link_omi": "https://www.agenziaentrate.gov.it/portale/schede/fabbricateritreni/omi/consultazione-quotazioni-immobiliari",
         "indice_liquidita_omi": "Alta",
         "variazione_liquidita_percento": 3.5,
         "data_segnalazione": "2026-10-04"
@@ -91,17 +97,14 @@ def generate_deals_data():
         cleaned = cleaned[:-3]
       deals = json.loads(cleaned.strip())
   except Exception as e:
-    print(
-        "Attenzione: Fallito il parsing diretto del JSON dall'AI. Errore:"
-        f" {e}\nTesto ricevuto:\n{text[:200]}..."
-    )
+    print(f"Attenzione: Fallito il parsing diretto del JSON dall'AI. Errore: {e}")
     return []
 
   return deals if isinstance(deals, list) else []
 
 
 def save_json_persistent(new_deals):
-  """Salvataggio sicuro nel database locale con protezione da corruzione."""
+  """Salvataggio sicuro: aggiorna i dati preservando i preferiti, la mappa e i link."""
   if not new_deals:
     print("Nessun nuovo deal da salvare.")
     return
@@ -117,28 +120,39 @@ def save_json_persistent(new_deals):
         if content:
           existing_deals = json.loads(content)
     except Exception as e:
-      print(
-          "Nota: Storico precedente non leggibile o vuoto. Verrà ricreato. Dettaglio:"
-          f" {e}"
-      )
+      print(f"Nota: Storico precedente non leggibile. Verrà rigenerato. {e}")
       existing_deals = []
 
-  existing_links = {item.get("link") for item in existing_deals if item.get("link")}
+  existing_dict = {
+      item.get("indirizzo"): item for item in existing_deals if item.get("indirizzo")
+  }
 
+  final_deals = []
+  updated_count = 0
   added_count = 0
-  for deal in new_deals:
-    link = deal.get("link")
-    if link and link not in existing_links:
-      existing_deals.insert(0, deal)
-      existing_links.add(link)
+
+  for new_deal in new_deals:
+    addr = new_deal.get("indirizzo")
+    if addr and addr in existing_dict:
+      old_deal = existing_dict[addr]
+      new_deal["preferito"] = old_deal.get("preferito", False)
+      final_deals.append(new_deal)
+      del existing_dict[addr]
+      updated_count += 1
+    else:
+      new_deal["preferito"] = False
+      final_deals.append(new_deal)
       added_count += 1
+
+  for addr, old_deal in existing_dict.items():
+    final_deals.append(old_deal)
 
   try:
     with open(file_path, "w", encoding="utf-8") as f:
-      json.dump(existing_deals, f, ensure_ascii=False, indent=2)
+      json.dump(final_deals, f, ensure_ascii=False, indent=2)
     print(
-        f"Database aggiornato con successo. Aggiunti {added_count} nuovi deal."
-        f" Totale in archivio: {len(existing_deals)} immobili."
+        f"Database aggiornato: {added_count} nuovi, {updated_count} aggiornati."
+        f" Totale in archivio: {len(final_deals)} immobili."
     )
   except Exception as e:
     print(f"Errore critico nella scrittura del file JSON: {e}")
@@ -152,7 +166,6 @@ def send_telegram_message(deals):
   raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
   chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
   if not raw_token or not chat_id:
-    print("Telegram Token o Chat ID non configurati. Notifica saltata.")
     return
 
   match = re.search(r"(\d+:[A-Za-z0-9_\-]+)", raw_token)
@@ -168,7 +181,7 @@ def send_telegram_message(deals):
         f"💰 Prezzo: €{item.get('prezzo', 0):,} | Margine:"
         f" *€{item.get('margine_mnp', 0):,}*\n"
     )
-    msg += f"🔗 [Apri Annuncio]({item.get('link', '#')})\n"
+    msg += f"🔗 [Apri Ricerca Mirata]({item.get('link', '#')})\n"
     msg += "----------------------------------------\n"
 
   payload = {
@@ -179,15 +192,10 @@ def send_telegram_message(deals):
   }
 
   try:
-    print("Invio notifica Telegram in corso...")
     response = requests.post(url, json=payload, timeout=10)
     response.raise_for_status()
-    print("Notifica Telegram inviata con successo!")
   except Exception as e:
-    print(
-        "Avviso non bloccante: Impossibile inviare il messaggio Telegram ("
-        f"{e}). I dati sono comunque salvi nel database."
-    )
+    print(f"Avviso non bloccante Telegram: {e}")
 
 
 if __name__ == "__main__":
@@ -196,7 +204,7 @@ if __name__ == "__main__":
     deals = generate_deals_data()
     save_json_persistent(deals)
     send_telegram_message(deals)
-    print("=== ESECUZIONE COMPLETATA CON SUCCESSO ===")
+    print("=== ESECUZIONE COMPLETATA CON SUCCESSCO ===")
   except Exception as e:
     print(f"ERRORE CRITICO INTERCETTATO NEL MAIN: {e}")
     raise e
