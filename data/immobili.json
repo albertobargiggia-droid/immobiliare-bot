@@ -1,0 +1,58 @@
+[
+  {
+    "titolo": "Trilocale da ristrutturare con balconata",
+    "indirizzo": "Via Giacomo Matteotti 45, Rho (MI)",
+    "zona": "Rho",
+    "portale": "Immobiliare.it",
+    "link": "https://www.immobiliare.it",
+    "tipo": "Residenziale",
+    "prezzo": 78000,
+    "superficie_mq": 75,
+    "prezzo_mq": 1040,
+    "delta_omi_percento": -38.2,
+    "margine_mnp": 45000,
+    "data_segnalazione": "2026-10-04"
+  },
+  {
+    "titolo": "Bilocale piano alto ottimo da frazionamento/flip",
+    "indirizzo": "Via Privata Paravia 32, Milano (MI)",
+    "zona": "Milano",
+    "portale": "Idealista.it",
+    "link": "https://www.idealista.it",
+    "tipo": "Residenziale",
+    "prezzo": 135000,
+    "superficie_mq": 60,
+    "prezzo_mq": 2250,
+    "delta_omi_percento": -28.5,
+    "margine_mnp": 52000,
+    "data_segnalazione": "2026-10-04"
+  },
+  {
+    "titolo": "Quadrilocale termoautonomo adiacenze Policlinico",
+    "indirizzo": "Viale Camillo Golgi 88, Pavia (PV)",
+    "zona": "Pavia",
+    "portale": "Casa.it",
+    "link": "https://www.casa.it",
+    "tipo": "Residenziale",
+    "prezzo": 110000,
+    "superficie_mq": 98,
+    "prezzo_mq": 1122,
+    "delta_omi_percento": -34.8,
+    "margine_mnp": 48000,
+    "data_segnalazione": "2026-10-04"
+  },
+  {
+    "titolo": "Trilocale con cantina e box doppio",
+    "indirizzo": "Via Eugenio Curiel 18, Trezzano sul Naviglio (MI)",
+    "zona": "Trezzano sul Naviglio",
+    "portale": "Immobiliare.it",
+    "link": "https://www.immobiliare.it",
+    "tipo": "Residenziale",
+    "prezzo": 95000,
+    "superficie_mq": 82,
+    "prezzo_mq": 1159,
+    "delta_omi_percento": -31.4,
+    "margine_mnp": 41000,
+    "data_segnalazione": "2026-10-04"
+  }
+]
