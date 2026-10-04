@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import subprocess
 import google.generativeai as genai
 import requests
 
@@ -79,10 +80,8 @@ def generate_deals_data():
     print(f"Errore durante la chiamata API a Gemini: {e}")
     return []
 
-  # Parsing JSON ultra-robusto con fallback e stampa di debug
   deals = []
   try:
-    # Cerca l'array JSON nel testo
     match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
     if match:
       json_str = match.group(0)
@@ -100,14 +99,13 @@ def generate_deals_data():
     print(f"DEBUG - Numero di deal correttamente parsati dal JSON: {len(deals)}")
   except Exception as e:
     print(f"ATTENZIONE: Fallito il parsing del JSON. Errore: {e}")
-    print(f"Testo grezzo ricevuto (primi 300 caratteri):\n{text[:300]}")
     return []
 
   return deals if isinstance(deals, list) else []
 
 
-def save_json_persistent(new_deals):
-  """Salvataggio sicuro con aggiornamento e preservazione preferiti."""
+def save_and_push_json(new_deals):
+  """Salvataggio sicuro e auto-push su GitHub del database aggiornato."""
   if not new_deals:
     print("Nessun nuovo deal da salvare (lista vuota).")
     return
@@ -154,11 +152,47 @@ def save_json_persistent(new_deals):
     with open(file_path, "w", encoding="utf-8") as f:
       json.dump(final_deals, f, ensure_ascii=False, indent=2)
     print(
-        f"Database salvato con successo: {added_count} nuovi, {updated_count}"
+        f"Database salvato in locale: {added_count} nuovi, {updated_count}"
         f" aggiornati. Totale in archivio: {len(final_deals)} immobili."
     )
+
+    # --- AUTO-PUSH SU GITHUB ---
+    print("Sincronizzazione modifiche su GitHub...")
+    subprocess.run(
+        ["git", "config", "--global", "user.name", "Real Estate Bot"], check=True
+    )
+    subprocess.run(
+        [
+            "git",
+            "config",
+            "--global",
+            "user.email",
+            "bot@actions.github.com",
+        ],
+        check=True,
+    )
+    subprocess.run(["git", "add", file_path], check=True)
+
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+    )
+    if status.stdout.strip():
+      subprocess.run(
+          [
+              "git",
+              "commit",
+              "-m",
+              "Auto-aggiornamento database immobili.json [skip ci]",
+          ],
+          check=True,
+      )
+      subprocess.run(["git", "push"], check=True)
+      print("Push su GitHub completato con successo!")
+    else:
+      print("Nessuna modifica da pushar su git.")
+
   except Exception as e:
-    print(f"ERRORE CRITICO nella scrittura del file JSON: {e}")
+    print(f"Avviso/Errore durante il salvataggio o il push git: {e}")
 
 
 def send_telegram_message(deals):
@@ -205,7 +239,7 @@ if __name__ == "__main__":
   print("=== AVVIO SCRIPT ANALISI IMMOBILIARE ===")
   try:
     deals = generate_deals_data()
-    save_json_persistent(deals)
+    save_and_push_json(deals)
     send_telegram_message(deals)
     print("=== ESECUZIONE COMPLETATA CON SUCCESSO ===")
   except Exception as e:
