@@ -1,114 +1,108 @@
+import streamlit as st
 import json
 import os
-import pandas as pd
-import streamlit as st
 
-# Configurazione della pagina
+# Configurazione della pagina in modalità wide per sfruttare tutto lo schermo
 st.set_page_config(
-    page_title="Radar Immobiliare AI", page_icon="🏡", layout="wide"
+    page_title="Radar Immobiliare & NPL - Dashboard", 
+    page_icon="🏠", 
+    layout="wide"
 )
 
-st.title("🏡 Radar Immobiliare & NPL - Dashboard")
-st.markdown(
-    "Monitoraggio automatico di ribassi, aste, UTP e NPL elaborato tramite intelligenza artificiale."
-)
+# --- STILE CSS PERSONALIZZATO PER PULIZIA VISIVA ---
+st.markdown("""
+    <style>
+    .metric-card {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .deal-card {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    </style>
+""", unsafe_allow_html=True)
 
+# Titolo principale
+st.title("🏠 Radar Immobiliare & NPL – Deal Sourcing Dashboard")
+st.markdown("Monitoraggio automatico di ribassi, aste, UTP e opportunità di investimento immobiliare.")
 
-# Funzione per caricare i dati (supporta JSON o CSV salvati dal tuo scraper)
-@st.cache_data(ttl=600)  # Aggiorna la cache ogni 10 minuti
-def load_data():
-    # Percorso del file dati generato dal tuo scraper su GitHub
-    data_path = "data/immobili.json"  # Modifica il percorso se salvi in un altro file o formato (es. csv)
+json_path = "data/immobili.json"
 
-    if os.path.exists(data_path):
-        try:
-            with open(data_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            st.error(f"Errore nella lettura del file dati: {e}")
-            return []
-    return []
-
-
-data = load_data()
-
-if not data:
-    st.info(
-        "Nessun dato trovato. Assicurati che lo scraper abbia eseguito almeno un salvataggio nel percorso corretto (es. `data/immobili.json`)."
-    )
+if not os.path.exists(json_path):
+    st.warning("⚠️ Nessun dato trovato in `data/immobili.json`. Esegui prima il bot di scraping.")
 else:
-    # Convertiamo in DataFrame Pandas per facilitare i filtri
-    df = pd.DataFrame(data)
+    with open(json_path, "r", encoding="utf-8") as f:
+        deals = json.load(f)
+    
+    if not deals:
+        st.info("Il file JSON è attualmente vuoto.")
+    else:
+        # --- BARRA LATERALE: FILTRI DI RICERCA ---
+        st.sidebar.header("🔍 Filtri di Ricerca")
+        
+        # Filtro Tipologia
+        tipologie = ["Tutte"] + list(set(item.get('tipo', 'Generico') for item in deals))
+        selected_tipologia = st.sidebar.selectbox("Tipologia", tipologie)
+        
+        # Filtro Zona
+        zone = ["Tutte"] + list(set(item.get('zona', 'N/D') for item in deals))
+        selected_zona = st.sidebar.selectbox("Zona", zone)
+        
+        # Applicazione filtri
+        filtered_deals = deals
+        if selected_tipologia != "Tutte":
+            filtered_deals = [d for d in filtered_deals if d.get('tipo') == selected_tipologia]
+        if selected_zona != "Tutte":
+            filtered_deals = [d for d in filtered_deals if d.get('zona') == selected_zona]
 
-    # --- BARRA LATERALE: FILTRI ---
-    st.sidebar.header("🔍 Filtri di Ricerca")
+        # --- PANNELLO METRICHE GENERALI ---
+        st.markdown("---")
+        m1, m2, m3, m4 = st.columns(4)
+        
+        tot_annunci = len(filtered_deals)
+        prezzo_medio = sum(d.get('prezzo', 0) for d in filtered_deals) / tot_annunci if tot_annunci > 0 else 0
+        margine_medio = sum(d.get('margine_mnp', 0) for d in filtered_deals) / tot_annunci if tot_annunci > 0 else 0
+        
+        m1.metric("Annunci Filtrati", tot_annunci)
+        m2.metric("Prezzo Medio", f"€ {prezzo_medio:,.0f}")
+        m3.metric("Margine MNP Medio", f"€ {margine_medio:,.0f}")
+        m4.metric("Fonti Aggiornate", "GitHub Actions")
+        
+        st.markdown("---")
+        st.subheader("📋 Elenco Opportunità Immobiliari")
 
-    # Filtro Tipologia (Aste, UTP, NPL, Ribassi, ecc.)
-    if "tipo" in df.columns:
-        tipologie = ["Tutte"] + list(df["tipo"].unique())
-        selected_tipo = st.sidebar.selectbox("Tipologia", tipologie)
-        if selected_tipo != "Tutte":
-            df = df[df["tipo"] == selected_tipo]
-
-    # Filtro Testuale (Zona o Parole chiave)
-    search_query = st.sidebar.text_input("Cerca per zona o titolo")
-    if search_query and "titolo" in df.columns:
-        df = df[
-            df["titolo"].str.contains(search_query, case=False, na=False)
-            | df.get("zona", pd.Series([False] * len(df)))
-            .astype(str)
-            .str.contains(search_query, case=False, na=False)
-        ]
-
-    # --- METRICHE PRINCIPALI ---
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Annunci Filtrati", len(df))
-    if "prezzo" in df.columns:
-        # Pulisci e calcola il prezzo medio se numerico
-        try:
-            prezzo_medio = df["prezzo"].astype(float).mean()
-            col2.metric("Prezzo Medio", f"€ {prezzo_medio:,.0f}")
-        except:
-            col2.metric("Prezzo Medio", "N/D")
-    col3.metric(
-        "Fonti Aggiornate", "GitHub Actions"
-    )  # o data dell'ultimo aggiornamento
-
-    st.markdown("---")
-
-    # --- VISUALIZZAZIONE DATI ---
-    st.subheader("📋 Elenco Opportunità Immobiliari")
-
-    for index, row in df.iterrows():
-        titolo = row.get("titolo", "Immobile senza titolo")
-        prezzo = row.get("prezzo", "N/D")
-        tipo = row.get("tipo", "Generico")
-        ribasso = row.get("ribasso", "N/D")
-        analisi = row.get(
-            "analisi",
-            "Nessuna analisi IA disponibile per questo immobile.",
-        )
-        link = row.get("link", "#")
-        data_rilevazione = row.get("data", "N/D")
-
-        with st.expander(
-            f"📌 [{tipo}] {titolo} — Prezzo: € {prezzo} (Ribasso/Stima: {ribasso})"
-        ):
-            c1, c2 = st.columns([2, 1])
-            with c1:
-                st.markdown(f"**Analisi Gemini AI:**\n{analisi}")
-                st.write(f"📅 Rilevato il: {data_rilevazione}")
-            with c2:
-                if link and link != "#":
-                    st.markdown(
-                        f"[🔗 Apri Link Originale dell'Annuncio]({link})",
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    st.write("Link non disponibile")
-
-            # Se hai uno storico dei prezzi per singolo immobile puoi mostrarlo qui sotto
-            if "storico" in row and row["storico"]:
-                st.markdown("---")
-                st.write("**Storico variazioni prezzo:**")
-                st.line_chart(pd.DataFrame(row["storico"]))
+        if not filtered_deals:
+            st.info("Nessun immobile corrisponde ai filtri selezionati.")
+        else:
+            for item in filtered_deals:
+                with st.container():
+                    st.markdown(f"""
+                        <div class="deal-card">
+                            <h3>🏠 {item.get('titolo', 'Immobile')}</h3>
+                            <p><b>📍 Indirizzo:</b> {item.get('indirizzo', 'N/D')} | <b>🌐 Portale:</b> {item.get('portale', 'N/D')}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.write(f"**Tipologia:** {item.get('tipo', 'N/D')}")
+                        st.write(f"**Zona:** {item.get('zona', 'N/D')}")
+                        st.write(f"**Superficie:** {item.get('superficie_mq', 0)} m²")
+                    with col2:
+                        st.write(f"**Prezzo Richiesto:** € {item.get('prezzo', 0):,}")
+                        st.write(f"**Prezzo al m²:** € {item.get('prezzo_mq', 0):,}")
+                    with col3:
+                        st.write(f"**Delta OMI:** `{item.get('delta_omi_percento', 0)}%`")
+                        st.write(f"**Margine MNP:** `€ {item.get('margine_mnp', 0):,}`")
+                    
+                    link = item.get('link', '#')
+                    st.markdown(f"🔗 **[Apri Scheda / Portale Ufficiale]({link})**")
+                    st.markdown("---")
