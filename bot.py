@@ -14,7 +14,7 @@ def generate_deals_data():
     prompt = (
         "Agisci come un analista immobiliare senior. "
         "Genera un elenco di 4 opportunità immobiliari concrete in formato JSON puro nelle zone: "
-        "Milano, Rho, Opera, Pavia, Trezzano sul Naviglio.\n"
+        "Milano, Rho, Opera, Pavia, Trezzano sul Naviglio, Lacchiarella, Binasco, Siziano, Zibido San Giacomo, Pero, Rozzano, Giussago, Casarile, Noviglio, San Pietro Cusico, Moirago, Fizzonasco, Noviglio, Lainate, via Forlanini Milano, Scalo Romana Milano, Rogoredo, Salvanesco, Metanopoli Milano, San donato Milanese, Settimo Milanese, via Capecelatro Milano, San siro Milano, San Giuliano Milanese, Giovenzano, Borgarello, Arenzano, Santa corinna, Quinto De Stampi, Chiesa Rossa, Assago, Corsico, Buccinasco, Baggio, Milano cintura sud.\n"
         "Restituisci UNICAMENTE un oggetto JSON valido (senza markdown attorno se non il blocco json) con questa struttura esatta:\n"
         "[\n"
         "  {\n"
