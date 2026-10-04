@@ -2,18 +2,20 @@ name: Daily Real Estate Report
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 8 * * *'
+  # schedule:
+  #   - cron: '0 8 * * *'
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Fondamentale per permettere al bot di salvare il file JSON su GitHub
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -23,8 +25,17 @@ jobs:
           pip install requests google-generativeai
 
       - name: Run bot script
-        run: python bot.py
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python bot.py
+
+      - name: Commit and push immobili.json
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/immobili.json
+          git commit -m "Aggiornamento automatico immobili.json [skip ci]" || echo "Nessuna modifica da committare"
+          git push
