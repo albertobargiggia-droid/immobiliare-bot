@@ -105,7 +105,7 @@ def generate_deals_data():
 
 
 def save_and_push_json(new_deals):
-  """Salvataggio sicuro e auto-push su GitHub del database aggiornato."""
+  """Salvataggio sicuro e auto-push su GitHub con autenticazione forzata."""
   if not new_deals:
     print("Nessun nuovo deal da salvare (lista vuota).")
     return
@@ -156,8 +156,8 @@ def save_and_push_json(new_deals):
         f" aggiornati. Totale in archivio: {len(final_deals)} immobili."
     )
 
-    # --- AUTO-PUSH SU GITHUB ---
-    print("Sincronizzazione modifiche su GitHub...")
+    # --- AUTO-PUSH BLINDATO SU GITHUB ---
+    print("Configurazione credenziali e sincronizzazione su GitHub...")
     subprocess.run(
         ["git", "config", "--global", "user.name", "Real Estate Bot"], check=True
     )
@@ -171,6 +171,16 @@ def save_and_push_json(new_deals):
         ],
         check=True,
     )
+
+    # Iniettiamo il token di GitHub nell'URL remoto per autorizzare il push
+    token = os.environ.get("GITHUB_TOKEN")
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if token and repo:
+      remote_url = f"https://x-access-token:{token}@[github.com/](https://github.com/){repo}.git"
+      subprocess.run(
+          ["git", "remote", "set-url", "origin", remote_url], check=True
+      )
+
     subprocess.run(["git", "add", file_path], check=True)
 
     status = subprocess.run(
@@ -189,10 +199,10 @@ def save_and_push_json(new_deals):
       subprocess.run(["git", "push"], check=True)
       print("Push su GitHub completato con successo!")
     else:
-      print("Nessuna modifica da pushar su git.")
+      print("Nessuna modifica da pushare su git.")
 
   except Exception as e:
-    print(f"Avviso/Errore durante il salvataggio o il push git: {e}")
+    print(f"Errore durante il salvataggio o il push git: {e}")
 
 
 def send_telegram_message(deals):
