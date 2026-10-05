@@ -14,12 +14,16 @@ MODELLO_AI = "gemini-1.5-flash"
 
 
 def send_telegram_summary(deals):
-  """Invia una notifica riassuntiva su Telegram in modo sicuro e resiliente.
+  """Invia una notifica Telegram con link cliccabili sicuri per Streamlit
 
-  Utilizza HTML escaping e gestione rigorosa delle eccezioni di rete e timeout.
+  e ricerche mirate per ogni immobile, evitando i blocchi anti-bot.
   """
   token = os.environ.get("TELEGRAM_BOT_TOKEN")
   chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+  # Recupera l'URL della tua app Streamlit dai secret (o usa un fallback)
+  streamlit_url = os.environ.get(
+      "STREAMLIT_URL", "https://share.streamlit.io/"
+  )
 
   if not token or not chat_id:
     print(
@@ -37,13 +41,14 @@ def send_telegram_summary(deals):
       f"Analizzate <b>{count} opportunità</b> nelle zone target.\n",
   ]
 
-  # Mostriamo un'anteprima dei primi immobili con link di ricerca verificati
+  # Popoliamo l'anteprima con link diretti e mirati per ogni immobile
   for d in deals[:5]:
     t = html.escape(str(d.get("titolo", "Immobile")))
     z = html.escape(str(d.get("zona", "")))
     p = d.get("prezzo", 0)
     m = d.get("margine_mnp", 0)
-    link = html.escape(str(d.get("link", "https://pvp.giustizia.it/")))
+    # Link specifico dell'immobile o di ricerca mirata
+    link = html.escape(str(d.get("link", streamlit_url)))
 
     summary_lines.append(
         f"• <b><a href='{link}'>{t}</a></b> ({z})\n  Prezzo: €{p:,} | MNP:"
@@ -53,9 +58,10 @@ def send_telegram_summary(deals):
   if count > 5:
     summary_lines.append(f"\n<i>...e altri {count - 5} immobili in lista.</i>")
 
+  # Link cliccabile ufficiale per Streamlit in fondo al messaggio
   summary_lines.append(
-      "\n👉 <i>Accedi alla dashboard Streamlit per consultare mappa e link"
-      " ufficiali.</i>"
+      f"\n👉 <b><a href='{streamlit_url}'>Accedi alla dashboard"
+      " Streamlit</a></b> per mappa e dettagli."
   )
   message = "\n".join(summary_lines)
 
@@ -102,7 +108,7 @@ def generate_deals_data():
             Agisci come un analista senior di NPL, UTP e distressed assets.
             Genera un elenco di esattamente 8 opportunità immobiliari nelle zone: {ZONE_TARGET}.
             PARAMETRI RIGOROSI: Prezzo massimo <= €300.000, Margine MNP netto tra €20.000 e €50.000, ROI >= 25-30%.
-            IMPORTANTE PER I LINK: Per il campo "link", inserisci URL di ricerca ufficiali e funzionanti (es. link al Portale Vendite Pubbliche https://pvp.giustizia.it/ oppure link di ricerca Google strutturati sulla via/zona) per evitare link non esistenti.
+            IMPORTANTE PER I LINK: Per il campo "link", genera URL di ricerca mirata basati sull'indirizzo esatto e comune dell'immobile (es. una query di ricerca Google formattata come https://www.google.com/search?q=asta+giudiziaria+[Indirizzo]+[Comune]) in modo da puntare direttamente all'annuncio o ai risultati specifici senza finire sulla home generica del portale.
             RESTITUISCI SOLO UN ARRAY JSON VALIDO con questa struttura esatta per ogni oggetto:
             [
               {{
@@ -111,7 +117,7 @@ def generate_deals_data():
                 "zona": "Rho",
                 "tipo": "Residenziale",
                 "portale": "PVP Aste",
-                "link": "https://pvp.giustizia.it/",
+                "link": "https://www.google.com/search?q=asta+giudiziaria+Via+Roma+10+Rho",
                 "stato_giudiziario": "Asta Giudiziaria",
                 "storico_ribassi": "Ribassato 3 volte",
                 "esecutato_proprietario": "Mario Rossi",
@@ -146,7 +152,7 @@ def generate_deals_data():
     except Exception as e:
       print(f"Errore API Gemini (uso fallback): {e}")
 
-  # Fallback di sicurezza con link istituzionali verificati (PVP Giustizia)
+  # Fallback di sicurezza con link di ricerca mirati per indirizzo
   if not deals:
     print("ATTENZIONE: Attivazione dataset di fallback garantito.")
     deals = [
@@ -156,7 +162,9 @@ def generate_deals_data():
             "zona": "Rho",
             "tipo": "Residenziale",
             "portale": "PVP Aste",
-            "link": "https://pvp.giustizia.it/",
+            "link": (
+                "https://www.google.com/search?q=asta+giudiziaria+Via+Matteotti+12+Rho"
+            ),
             "stato_giudiziario": "Asta Giudiziaria",
             "storico_ribassi": "Ribassato 2 volte",
             "esecutato_proprietario": "Luigi Verdi",
@@ -184,7 +192,9 @@ def generate_deals_data():
             "zona": "Pavia",
             "tipo": "Residenziale",
             "portale": "Deal UTP",
-            "link": "https://pvp.giustizia.it/",
+            "link": (
+                "https://www.google.com/search?q=immobile+UTP+Via+Dante+45+Pavia"
+            ),
             "stato_giudiziario": "Posizione UTP",
             "storico_ribassi": "Trattativa privata",
             "esecutato_proprietario": "Mario Neri",
@@ -212,7 +222,9 @@ def generate_deals_data():
             "zona": "Trezzano sul Naviglio",
             "tipo": "Residenziale",
             "portale": "Fallco Aste",
-            "link": "https://pvp.giustizia.it/",
+            "link": (
+                "https://www.google.com/search?q=asta+fallimento+Via+Emilia+8+Trezzano+sul+Naviglio"
+            ),
             "stato_giudiziario": "Fallimento",
             "storico_ribassi": "Ribassato 4 volte",
             "esecutato_proprietario": "Giuseppe Bianchi",
@@ -288,7 +300,7 @@ def save_and_push_json(new_deals):
               "git",
               "commit",
               "-m",
-              "Aggiornamento database immobili con link verificati [skip ci]",
+              "Aggiornamento database immobili con link mirati [skip ci]",
           ],
           check=True,
       )
