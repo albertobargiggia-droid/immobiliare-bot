@@ -1,7 +1,6 @@
 import html
 import json
 import os
-import subprocess
 import requests
 
 # Matrice di riferimento reale (Benchmark Bilocali: Prezzi al mq)
@@ -46,28 +45,26 @@ ZONE_BENCHMARKS = {
 
 
 def send_telegram_summary(deals):
-  """Invia una notifica Telegram con link cliccabili sicuri e calcoli reali."""
+  """Invia la notifica Telegram con link cliccabili e calcoli di margine reali."""
   token = os.environ.get("TELEGRAM_BOT_TOKEN")
   chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+  # Legge il secret STREAMLIT_URL che hai già impostato su GitHub
   streamlit_url = os.environ.get(
       "STREAMLIT_URL", "https://share.streamlit.io/"
   )
 
   if not token or not chat_id:
-    print(
-        "[AVVISO] TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID non configurati."
-        " Notifica saltata."
-    )
+    print("[AVVISO] Token o Chat ID Telegram mancanti.")
     return False
 
   if not deals:
-    print("[AVVISO] Nessun immobile presente nel database.")
+    print("[AVVISO] Nessun immobile nel database.")
     return False
 
   count = len(deals)
   summary_lines = [
-      "🚨 <b>Pipeline Immobili - Analisi Ibrida</b>",
-      f"Monitorate <b>{count} opportunità</b> validate.\n",
+      "🚨 <b>Pipeline Immobili - Sistema Ibrido</b>",
+      f"Monitorate <b>{count} opportunità</b> attive.\n",
   ]
 
   for d in deals[:5]:
@@ -76,10 +73,11 @@ def send_telegram_summary(deals):
     p = d.get("prezzo", 0)
     sup = d.get("superficie_mq", 60)
 
-    # Calcolo automatico basato sui benchmark reali della zona
+    # Calcolo automatico del margine MNP stimato
     bench = ZONE_BENCHMARKS.get(z, {"exit_price_mq": 2500})
     est_exit = sup * bench["exit_price_mq"]
-    margine_stimato = est_exit - p - (sup * 500)  # Stima costi ristrutturazione
+    costo_ristrutturazione = sup * 500  # Stima standard artigianale al mq
+    margine_stimato = est_exit - p - costo_ristrutturazione
 
     link = html.escape(str(d.get("link", streamlit_url)))
 
@@ -91,6 +89,7 @@ def send_telegram_summary(deals):
   if count > 5:
     summary_lines.append(f"\n<i>...e altri {count - 5} immobili in lista.</i>")
 
+  # Link diretto alla dashboard Streamlit configurata nei Secret
   summary_lines.append(
       f"\n👉 <b><a href='{streamlit_url}'>Accedi alla dashboard"
       " Streamlit</a></b> per gestire la pipeline."
@@ -118,7 +117,6 @@ def send_telegram_summary(deals):
 
 
 def load_deals():
-  """Carica il database locale degli immobili senza ricorrere ad allucinazioni IA."""
   file_path = "data/immobili.json"
   if os.path.exists(file_path):
     try:
@@ -126,32 +124,7 @@ def load_deals():
         return json.load(f)
     except Exception as e:
       print(f"Errore lettura JSON: {e}")
-
-  # Dataset di sicurezza predefinito con dati reali coerenti
-  return [
-      {
-          "titolo": "Bilocale in Asta Giudiziaria",
-          "indirizzo": "Via Matteotti 12, Rho (MI)",
-          "zona": "Rho",
-          "tipo": "Residenziale",
-          "portale": "PVP Aste",
-          "link": "https://pvp.giustizia.it/",
-          "prezzo": 95000,
-          "superficie_mq": 60,
-          "data_segnalazione": "2026-10-05",
-      },
-      {
-          "titolo": "Trilocale UTP Bancario",
-          "indirizzo": "Via Dante 45, Pavia (PV)",
-          "zona": "Pavia",
-          "tipo": "Residenziale",
-          "portale": "Deal UTP",
-          "link": "https://pvp.giustizia.it/",
-          "prezzo": 140000,
-          "superficie_mq": 90,
-          "data_segnalazione": "2026-10-05",
-      },
-  ]
+  return []
 
 
 if __name__ == "__main__":
