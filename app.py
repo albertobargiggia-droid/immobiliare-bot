@@ -3,9 +3,20 @@ import os
 import subprocess
 import streamlit as st
 
-# Benchmark di zona completi per il calcolo istantaneo del flipping
+# Benchmark di zona e quartieri completi per il calcolo istantaneo del flipping
 ZONE_BENCHMARKS = {
-    "Milano": {"exit_price_mq": 4800, "costo_ristrutturazione_mq": 600},
+    "Milano (Generale)": {
+        "exit_price_mq": 4800,
+        "costo_ristrutturazione_mq": 600,
+    },
+    "Porta Romana / Scalo Porta Romana": {
+        "exit_price_mq": 5800,
+        "costo_ristrutturazione_mq": 700,
+    },
+    "Viale Forlanini": {
+        "exit_price_mq": 3800,
+        "costo_ristrutturazione_mq": 600,
+    },
     "Milano Cintura Sud": {
         "exit_price_mq": 4100,
         "costo_ristrutturazione_mq": 600,
@@ -26,6 +37,7 @@ ZONE_BENCHMARKS = {
     "Binasco": {"exit_price_mq": 2200, "costo_ristrutturazione_mq": 450},
     "Sizziano": {"exit_price_mq": 2100, "costo_ristrutturazione_mq": 450},
     "Pavia": {"exit_price_mq": 2450, "costo_ristrutturazione_mq": 450},
+    "Arenzano": {"exit_price_mq": 3300, "costo_ristrutturazione_mq": 550},
 }
 
 st.set_page_config(
@@ -59,10 +71,12 @@ with st.expander(
           "Titolo / Tipologia", "Bilocale in Asta / UTP da ristrutturare"
       )
       zona = st.selectbox("Zona Target", list(ZONE_BENCHMARKS.keys()))
-      indirizzo = st.text_input("Indirizzo esatto", "Via Roma 10, Rho (MI)")
+      indirizzo = st.text_input(
+          "Indirizzo esatto", "Via Ripamonti / Corso Lodi, Milano"
+      )
     with col2:
       prezzo = st.number_input(
-          "Prezzo Base / Richiesto (€)", value=95000, step=1000
+          "Prezzo Base / Richiesto (€)", value=120000, step=1000
       )
       superficie = st.number_input("Superficie (mq)", value=60, step=1)
       link = st.text_input(
