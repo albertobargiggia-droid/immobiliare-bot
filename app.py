@@ -3,41 +3,77 @@ import os
 import subprocess
 import streamlit as st
 
-# Benchmark di zona e quartieri completi per il calcolo istantaneo del flipping
+# Benchmark completi per tutte le località e quartieri target
 ZONE_BENCHMARKS = {
-    "Milano (Generale)": {
-        "exit_price_mq": 4800,
-        "costo_ristrutturazione_mq": 600,
-    },
-    "Porta Romana / Scalo Porta Romana": {
-        "exit_price_mq": 5800,
-        "costo_ristrutturazione_mq": 700,
-    },
-    "Viale Forlanini": {
+    "Milano": {"exit_price_mq": 4800, "costo_ristrutturazione_mq": 600},
+    "Milano 3": {"exit_price_mq": 3300, "costo_ristrutturazione_mq": 500},
+    "Basiglio": {"exit_price_mq": 3000, "costo_ristrutturazione_mq": 500},
+    "Pieve Emanuele": {"exit_price_mq": 2300, "costo_ristrutturazione_mq": 450},
+    "Opera": {"exit_price_mq": 2900, "costo_ristrutturazione_mq": 500},
+    "Locate Triulzi": {"exit_price_mq": 2200, "costo_ristrutturazione_mq": 450},
+    "San Donato Milanese": {
         "exit_price_mq": 3800,
         "costo_ristrutturazione_mq": 600,
     },
-    "Milano Cintura Sud": {
-        "exit_price_mq": 4100,
-        "costo_ristrutturazione_mq": 600,
-    },
-    "Hinterland di Milano": {
-        "exit_price_mq": 2850,
+    "San Giuliano Milanese": {
+        "exit_price_mq": 2800,
         "costo_ristrutturazione_mq": 500,
     },
-    "Rho": {"exit_price_mq": 2700, "costo_ristrutturazione_mq": 500},
-    "Pero": {"exit_price_mq": 3150, "costo_ristrutturazione_mq": 550},
+    "Salvanesco": {"exit_price_mq": 2500, "costo_ristrutturazione_mq": 450},
+    "Rogoredo": {"exit_price_mq": 4000, "costo_ristrutturazione_mq": 600},
+    "Via Forlanini": {"exit_price_mq": 3800, "costo_ristrutturazione_mq": 600},
+    "Scalo Porta Romana": {
+        "exit_price_mq": 5800,
+        "costo_ristrutturazione_mq": 700,
+    },
+    "Porta Romana": {"exit_price_mq": 5800, "costo_ristrutturazione_mq": 700},
+    "Piazzale Lodi": {"exit_price_mq": 4900, "costo_ristrutturazione_mq": 650},
+    "Bocconi": {"exit_price_mq": 5600, "costo_ristrutturazione_mq": 700},
+    "Ticinese": {"exit_price_mq": 5700, "costo_ristrutturazione_mq": 700},
+    "Navigli": {"exit_price_mq": 5600, "costo_ristrutturazione_mq": 700},
+    "Viale Papiniano": {"exit_price_mq": 5600, "costo_ristrutturazione_mq": 700},
+    "Via Capecelatro": {"exit_price_mq": 4000, "costo_ristrutturazione_mq": 600},
+    "San Siro": {"exit_price_mq": 3900, "costo_ristrutturazione_mq": 600},
+    "Porta Genova": {"exit_price_mq": 5700, "costo_ristrutturazione_mq": 700},
+    "Corsico": {"exit_price_mq": 2850, "costo_ristrutturazione_mq": 500},
     "Trezzano sul Naviglio": {
         "exit_price_mq": 2800,
         "costo_ristrutturazione_mq": 500,
     },
-    "Opera": {"exit_price_mq": 2900, "costo_ristrutturazione_mq": 500},
+    "Buccinasco": {"exit_price_mq": 3500, "costo_ristrutturazione_mq": 550},
+    "Assago": {"exit_price_mq": 3400, "costo_ristrutturazione_mq": 550},
+    "Moirago": {"exit_price_mq": 2500, "costo_ristrutturazione_mq": 450},
+    "Via Tabacchi": {"exit_price_mq": 5300, "costo_ristrutturazione_mq": 650},
+    "Famagosta": {"exit_price_mq": 3900, "costo_ristrutturazione_mq": 600},
+    "Piazza Napoli": {"exit_price_mq": 4900, "costo_ristrutturazione_mq": 650},
+    "Barona": {"exit_price_mq": 3800, "costo_ristrutturazione_mq": 600},
     "Rozzano": {"exit_price_mq": 2650, "costo_ristrutturazione_mq": 500},
-    "Lacchiarella": {"exit_price_mq": 2350, "costo_ristrutturazione_mq": 450},
+    "Zibido San Giacomo": {
+        "exit_price_mq": 2300,
+        "costo_ristrutturazione_mq": 450,
+    },
+    "San Pietro Cusico": {
+        "exit_price_mq": 2150,
+        "costo_ristrutturazione_mq": 450,
+    },
+    "Badile": {"exit_price_mq": 2150, "costo_ristrutturazione_mq": 450},
     "Binasco": {"exit_price_mq": 2200, "costo_ristrutturazione_mq": 450},
-    "Sizziano": {"exit_price_mq": 2100, "costo_ristrutturazione_mq": 450},
+    "Noviglio": {"exit_price_mq": 2200, "costo_ristrutturazione_mq": 450},
+    "Santa Corinna": {"exit_price_mq": 2100, "costo_ristrutturazione_mq": 450},
+    "Vernate": {"exit_price_mq": 2050, "costo_ristrutturazione_mq": 450},
+    "Casarile": {"exit_price_mq": 2000, "costo_ristrutturazione_mq": 450},
+    "Lacchiarella": {"exit_price_mq": 2350, "costo_ristrutturazione_mq": 450},
+    "Siziano": {"exit_price_mq": 2100, "costo_ristrutturazione_mq": 450},
+    "Giussago": {"exit_price_mq": 2000, "costo_ristrutturazione_mq": 450},
+    "Giovenzano": {"exit_price_mq": 1950, "costo_ristrutturazione_mq": 450},
+    "Torriano": {"exit_price_mq": 1950, "costo_ristrutturazione_mq": 450},
     "Pavia": {"exit_price_mq": 2450, "costo_ristrutturazione_mq": 450},
     "Arenzano": {"exit_price_mq": 3300, "costo_ristrutturazione_mq": 550},
+    "Settimo Milanese": {
+        "exit_price_mq": 2900,
+        "costo_ristrutturazione_mq": 500,
+    },
+    "Cusago": {"exit_price_mq": 3000, "costo_ristrutturazione_mq": 500},
 }
 
 st.set_page_config(
