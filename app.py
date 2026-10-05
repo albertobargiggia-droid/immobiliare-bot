@@ -3,8 +3,17 @@ import os
 import subprocess
 import streamlit as st
 
-# Benchmark di zona per il calcolo istantaneo del flipping
+# Benchmark di zona completi per il calcolo istantaneo del flipping
 ZONE_BENCHMARKS = {
+    "Milano": {"exit_price_mq": 4800, "costo_ristrutturazione_mq": 600},
+    "Milano Cintura Sud": {
+        "exit_price_mq": 4100,
+        "costo_ristrutturazione_mq": 600,
+    },
+    "Hinterland di Milano": {
+        "exit_price_mq": 2850,
+        "costo_ristrutturazione_mq": 500,
+    },
     "Rho": {"exit_price_mq": 2700, "costo_ristrutturazione_mq": 500},
     "Pero": {"exit_price_mq": 3150, "costo_ristrutturazione_mq": 550},
     "Trezzano sul Naviglio": {
@@ -12,10 +21,10 @@ ZONE_BENCHMARKS = {
         "costo_ristrutturazione_mq": 500,
     },
     "Opera": {"exit_price_mq": 2900, "costo_ristrutturazione_mq": 500},
-    "Milano Cintura Sud": {
-        "exit_price_mq": 4100,
-        "costo_ristrutturazione_mq": 600,
-    },
+    "Rozzano": {"exit_price_mq": 2650, "costo_ristrutturazione_mq": 500},
+    "Lacchiarella": {"exit_price_mq": 2350, "costo_ristrutturazione_mq": 450},
+    "Binasco": {"exit_price_mq": 2200, "costo_ristrutturazione_mq": 450},
+    "Sizziano": {"exit_price_mq": 2100, "costo_ristrutturazione_mq": 450},
     "Pavia": {"exit_price_mq": 2450, "costo_ristrutturazione_mq": 450},
 }
 
@@ -66,7 +75,6 @@ with st.expander(
     )
 
     if submitted:
-      # Calcoli automatici di fattibilità finanziaria
       bench = ZONE_BENCHMARKS.get(
           zona, {"exit_price_mq": 2500, "costo_ristrutturazione_mq": 500}
       )
@@ -90,7 +98,7 @@ with st.expander(
       with open(file_path, "w", encoding="utf-8") as f:
         json.dump(deals, f, ensure_ascii=False, indent=2)
 
-      # Sincronizzazione automatica con il repository GitHub
+      # Sincronizzazione automatica con GitHub
       try:
         token = os.environ.get("GITHUB_TOKEN") or st.secrets.get(
             "GITHUB_TOKEN", ""
