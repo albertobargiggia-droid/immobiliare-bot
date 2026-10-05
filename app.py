@@ -1,104 +1,158 @@
 import json
 import os
-import pandas as pd
+import subprocess
 import streamlit as st
 
+# Benchmark di zona per il calcolo istantaneo del flipping
+ZONE_BENCHMARKS = {
+    "Rho": {"exit_price_mq": 2700, "costo_ristrutturazione_mq": 500},
+    "Pero": {"exit_price_mq": 3150, "costo_ristrutturazione_mq": 550},
+    "Trezzano sul Naviglio": {
+        "exit_price_mq": 2800,
+        "costo_ristrutturazione_mq": 500,
+    },
+    "Opera": {"exit_price_mq": 2900, "costo_ristrutturazione_mq": 500},
+    "Milano Cintura Sud": {
+        "exit_price_mq": 4100,
+        "costo_ristrutturazione_mq": 600,
+    },
+    "Pavia": {"exit_price_mq": 2450, "costo_ristrutturazione_mq": 450},
+}
+
 st.set_page_config(
-    page_title="Radar Immobiliare & NPL - Dashboard",
-    page_icon="🏠",
-    layout="wide",
+    page_title="Pipeline Flipping Immobiliare", layout="wide"
 )
+st.title("🏗️ Gestione Deal & Inserimento Ibrido")
 
-st.title("🏠 Radar Immobiliare & NPL - Deal Sourcing Dashboard")
-st.markdown(
-    "Monitoraggio automatico di ribassi, aste, UTP e opportunità di"
-    " investimento immobiliare."
-)
+file_path = "data/immobili.json"
 
-json_path = "data/immobili.json"
 
-if not os.path.exists(json_path):
-  st.warning(
-      "⚠️ File `data/immobili.json` non trovato. Esegui prima il bot su GitHub"
-      " Actions."
-  )
-  st.stop()
+def load_data():
+  if os.path.exists(file_path):
+    try:
+      with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+    except:
+      pass
+  return []
 
-try:
-  with open(json_path, "r", encoding="utf-8") as f:
-    deals = json.load(f)
-except Exception as e:
-  st.error(f"Errore nella lettura del file JSON: {e}")
-  deals = []
 
-if not deals:
-  st.info("Il database è attualmente vuoto.")
-  st.stop()
+deals = load_data()
 
-# --- FILTRI ---
-st.sidebar.header("🔍 Filtri di Ricerca")
-tipologie = ["Tutte"] + sorted(
-    list(set(item.get("tipo", "Generico") for item in deals))
-)
-selected_tipologia = st.sidebar.selectbox("Tipologia", tipologie)
-
-zone = ["Tutte"] + sorted(list(set(item.get("zona", "N/D") for item in deals)))
-selected_zona = st.sidebar.selectbox("Zona", zone)
-
-filtered_deals = deals
-if selected_tipologia != "Tutte":
-  filtered_deals = [
-      d for d in filtered_deals if d.get("tipo") == selected_tipologia
-  ]
-if selected_zona != "Tutte":
-  filtered_deals = [d for d in filtered_deals if d.get("zona") == selected_zona]
-
-# --- METRICHE ---
-st.markdown("---")
-m1, m2, m3, m4 = st.columns(4)
-tot_annunci = len(filtered_deals)
-prezzo_medio = (
-    sum(d.get("prezzo", 0) for d in filtered_deals) / tot_annunci
-    if tot_annunci
-    else 0
-)
-margine_medio = (
-    sum(d.get("margine_mnp", 0) for d in filtered_deals) / tot_annunci
-    if tot_annunci
-    else 0
-)
-
-m1.metric("Annunci Filtrati", tot_annunci)
-m2.metric("Prezzo Medio", f"€ {prezzo_medio:,.0f}")
-m3.metric("Margine MNP Medio", f"€ {margine_medio:,.0f}")
-m4.metric("Fonti Aggiornate", "GitHub Actions")
-
-st.markdown("---")
-st.subheader("📋 Elenco Opportunità Immobiliari")
-
-for item in filtered_deals:
-  with st.container():
-    st.markdown(
-        f"""
-        <div style="background-color:#ffffff; border: 1px solid #dee2e6; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <h3>🏠 {item.get('titolo', 'Immobile')}</h3>
-            <p><b>📍 Indirizzo:</b> {item.get('indirizzo', 'N/D')} | <b>🌐 Portale:</b> {item.get('portale', 'N/D')}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    col1, col2, col3 = st.columns(3)
+# --- MODULO DI INSERIMENTO RAPIDO DA MOBILE ---
+with st.expander(
+    "➕ Incolla Nuovo Annuncio (Metodo Ibrido)", expanded=True
+):
+  with st.form("form_inserimento_deal"):
+    col1, col2 = st.columns(2)
     with col1:
-      st.write(f"**Tipologia:** {item.get('tipo', 'N/D')}")
-      st.write(f"**Zona:** {item.get('zona', 'N/D')}")
-      st.write(f"**Superficie:** {item.get('superficie_mq', 0)} m²")
+      titolo = st.text_input(
+          "Titolo / Tipologia", "Bilocale in Asta / UTP da ristrutturare"
+      )
+      zona = st.selectbox("Zona Target", list(ZONE_BENCHMARKS.keys()))
+      indirizzo = st.text_input("Indirizzo esatto", "Via Roma 10, Rho (MI)")
     with col2:
-      st.write(f"**Prezzo Richiesto:** € {item.get('prezzo', 0):,}")
-      st.write(f"**Prezzo al m²:** € {item.get('prezzo_mq', 0):,}")
-    with col3:
-      st.write(f"**Delta OMI:** `{item.get('delta_omi_percento', 0)}%`")
-      st.write(f"**Margine MNP:** € {item.get('margine_mnp', 0):,}")
+      prezzo = st.number_input(
+          "Prezzo Base / Richiesto (€)", value=95000, step=1000
+      )
+      superficie = st.number_input("Superficie (mq)", value=60, step=1)
+      link = st.text_input(
+          "Link Reale dell'Annuncio (Copia dal browser)",
+          "https://pvp.giustizia.it/...",
+      )
 
-    link = item.get("link", "#")
-    st.markdown(f"**🔗 [Apri Scheda / Portale Ufficiale]({link})**")
-    st.markdown("---")
+    submitted = st.form_submit_button(
+        "Calcola Margine e Salva in Pipeline"
+    )
+
+    if submitted:
+      # Calcoli automatici di fattibilità finanziaria
+      bench = ZONE_BENCHMARKS.get(
+          zona, {"exit_price_mq": 2500, "costo_ristrutturazione_mq": 500}
+      )
+      est_exit = superficie * bench["exit_price_mq"]
+      costo_ristr = superficie * bench["costo_ristrutturazione_mq"]
+      margine_mnp = est_exit - prezzo - costo_ristr
+      roi_stimato = (margine_mnp / (prezzo + costo_ristr)) * 100
+
+      nuovo_deal = {
+          "titolo": titolo,
+          "indirizzo": indirizzo,
+          "zona": zona,
+          "link": link,
+          "prezzo": prezzo,
+          "superficie_mq": superficie,
+          "margine_mnp": int(margine_mnp),
+      }
+
+      deals.insert(0, nuovo_deal)
+      os.makedirs("data", exist_ok=True)
+      with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(deals, f, ensure_ascii=False, indent=2)
+
+      # Sincronizzazione automatica con il repository GitHub
+      try:
+        token = os.environ.get("GITHUB_TOKEN") or st.secrets.get(
+            "GITHUB_TOKEN", ""
+        )
+        repo = os.environ.get("GITHUB_REPOSITORY") or st.secrets.get(
+            "GITHUB_REPOSITORY", ""
+        )
+        if token and repo:
+          subprocess.run(["git", "config", "--global", "user.name", "Bot"])
+          subprocess.run([
+              "git",
+              "config",
+              "--global",
+              "user.email",
+              "bot@actions.com",
+          ])
+          subprocess.run([
+              "git",
+              "remote",
+              "set-url",
+              "origin",
+              f"https://x-access-token:{token}@github.com/{repo}.git",
+          ])
+          subprocess.run(["git", "add", file_path])
+          subprocess.run([
+              "git",
+              "commit",
+              "-m",
+              "Aggiunto nuovo deal via Streamlit [skip ci]",
+          ])
+          subprocess.run(["git", "push"])
+          st.success(
+              f"✅ Salvato e sincronizzato! Margine MNP stimato: €{int(margine_mnp):,} |"
+              f" ROI: {roi_stimato:.1f}%"
+          )
+        else:
+          st.success(
+              f"✅ Salvato localmente! Margine MNP stimato: €{int(margine_mnp):,}"
+              f" | ROI: {roi_stimato:.1f}%"
+          )
+      except Exception as e:
+        st.success(
+            f"✅ Salvato localmente (Git Push non attivo: {e}). Margine MNP:"
+            f" €{int(margine_mnp):,}"
+        )
+
+# --- VISUALIZZAZIONE LISTA ATTUALE ---
+st.subheader("📋 Pipeline Opportunità Monitorate")
+if deals:
+  for i, d in enumerate(deals):
+    with st.container():
+      st.markdown(
+          f"### {i+1}. {d.get('titolo')} — `{d.get('zona')}`"
+      )
+      st.write(
+          f"📍 **Indirizzo:** {d.get('indirizzo')} | 💰 **Prezzo:**"
+          f" €{d.get('prezzo'):,} | 📐 **Sup:** {d.get('superficie_mq')} mq | 📈"
+          f" **Margine MNP:** €{d.get('margine_mnp'):,}"
+      )
+      st.markdown(
+          f"🔗 **[Apri Link Ufficiale dell'Annuncio]({d.get('link')})**"
+      )
+      st.divider()
+else:
+  st.info("Nessun immobile in pipeline. Incollane uno nuovo dal form sopra!")
