@@ -3,8 +3,26 @@ import json
 import os
 import requests
 
-# Matrice di riferimento reale (Benchmark Bilocali: Prezzi al mq)
+# Matrice completa di riferimento reale per tutte le località target (Bilocali: Prezzi al mq)
 ZONE_BENCHMARKS = {
+    "Milano": {
+        "omi_min": 2500,
+        "omi_max": 4500,
+        "da_ristrutturare_mq": 3200,
+        "exit_price_mq": 4800,
+    },
+    "Milano Cintura Sud": {
+        "omi_min": 2200,
+        "omi_max": 3400,
+        "da_ristrutturare_mq": 2800,
+        "exit_price_mq": 4100,
+    },
+    "Hinterland di Milano": {
+        "omi_min": 1500,
+        "omi_max": 2200,
+        "da_ristrutturare_mq": 1900,
+        "exit_price_mq": 2850,
+    },
     "Rho": {
         "omi_min": 1300,
         "omi_max": 1850,
@@ -29,11 +47,29 @@ ZONE_BENCHMARKS = {
         "da_ristrutturare_mq": 2000,
         "exit_price_mq": 2900,
     },
-    "Milano Cintura Sud": {
-        "omi_min": 2200,
-        "omi_max": 3400,
-        "da_ristrutturare_mq": 2800,
-        "exit_price_mq": 4100,
+    "Rozzano": {
+        "omi_min": 1400,
+        "omi_max": 1900,
+        "da_ristrutturare_mq": 1750,
+        "exit_price_mq": 2650,
+    },
+    "Lacchiarella": {
+        "omi_min": 1200,
+        "omi_max": 1650,
+        "da_ristrutturare_mq": 1450,
+        "exit_price_mq": 2350,
+    },
+    "Binasco": {
+        "omi_min": 1100,
+        "omi_max": 1550,
+        "da_ristrutturare_mq": 1350,
+        "exit_price_mq": 2200,
+    },
+    "Sizziano": {
+        "omi_min": 1050,
+        "omi_max": 1500,
+        "da_ristrutturare_mq": 1300,
+        "exit_price_mq": 2100,
     },
     "Pavia": {
         "omi_min": 1150,
@@ -48,7 +84,6 @@ def send_telegram_summary(deals):
   """Invia la notifica Telegram con link cliccabili e calcoli di margine reali."""
   token = os.environ.get("TELEGRAM_BOT_TOKEN")
   chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-  # Legge il secret STREAMLIT_URL che hai già impostato su GitHub
   streamlit_url = os.environ.get(
       "STREAMLIT_URL", "https://share.streamlit.io/"
   )
@@ -73,10 +108,10 @@ def send_telegram_summary(deals):
     p = d.get("prezzo", 0)
     sup = d.get("superficie_mq", 60)
 
-    # Calcolo automatico del margine MNP stimato
+    # Calcolo automatico del margine MNP stimato basato sui benchmark reali
     bench = ZONE_BENCHMARKS.get(z, {"exit_price_mq": 2500})
     est_exit = sup * bench["exit_price_mq"]
-    costo_ristrutturazione = sup * 500  # Stima standard artigianale al mq
+    costo_ristrutturazione = sup * 500  # Stima costi standard al mq
     margine_stimato = est_exit - p - costo_ristrutturazione
 
     link = html.escape(str(d.get("link", streamlit_url)))
@@ -89,7 +124,6 @@ def send_telegram_summary(deals):
   if count > 5:
     summary_lines.append(f"\n<i>...e altri {count - 5} immobili in lista.</i>")
 
-  # Link diretto alla dashboard Streamlit configurata nei Secret
   summary_lines.append(
       f"\n👉 <b><a href='{streamlit_url}'>Accedi alla dashboard"
       " Streamlit</a></b> per gestire la pipeline."
