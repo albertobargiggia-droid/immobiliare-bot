@@ -3,55 +3,31 @@ import json
 import os
 import requests
 
-# Matrice completa di riferimento reale per tutte le zone e quartieri target (Bilocali: Prezzi al mq)
+# Matrice completa di riferimento reale per tutte le località e quartieri target (Bilocali: Prezzi al mq)
 ZONE_BENCHMARKS = {
-    "Milano (Generale)": {
+    "Milano": {
         "omi_min": 2500,
         "omi_max": 4500,
         "da_ristrutturare_mq": 3200,
         "exit_price_mq": 4800,
     },
-    "Porta Romana / Scalo Porta Romana": {
-        "omi_min": 3500,
-        "omi_max": 5800,
-        "da_ristrutturare_mq": 4200,
-        "exit_price_mq": 5800,
-    },
-    "Viale Forlanini": {
+    "Milano 3": {
         "omi_min": 2200,
-        "omi_max": 3600,
-        "da_ristrutturare_mq": 2600,
-        "exit_price_mq": 3800,
+        "omi_max": 3200,
+        "da_ristrutturare_mq": 2200,
+        "exit_price_mq": 3300,
     },
-    "Milano Cintura Sud": {
-        "omi_min": 2200,
-        "omi_max": 3400,
-        "da_ristrutturare_mq": 2800,
-        "exit_price_mq": 4100,
+    "Basiglio": {
+        "omi_min": 2000,
+        "omi_max": 3000,
+        "da_ristrutturare_mq": 2000,
+        "exit_price_mq": 3000,
     },
-    "Hinterland di Milano": {
-        "omi_min": 1500,
-        "omi_max": 2200,
-        "da_ristrutturare_mq": 1900,
-        "exit_price_mq": 2850,
-    },
-    "Rho": {
-        "omi_min": 1300,
-        "omi_max": 1850,
-        "da_ristrutturare_mq": 1800,
-        "exit_price_mq": 2700,
-    },
-    "Pero": {
-        "omi_min": 1600,
-        "omi_max": 2300,
-        "da_ristrutturare_mq": 2100,
-        "exit_price_mq": 3150,
-    },
-    "Trezzano sul Naviglio": {
-        "omi_min": 1500,
+    "Pieve Emanuele": {
+        "omi_min": 1400,
         "omi_max": 2100,
-        "da_ristrutturare_mq": 1900,
-        "exit_price_mq": 2800,
+        "da_ristrutturare_mq": 1500,
+        "exit_price_mq": 2300,
     },
     "Opera": {
         "omi_min": 1400,
@@ -59,17 +35,179 @@ ZONE_BENCHMARKS = {
         "da_ristrutturare_mq": 2000,
         "exit_price_mq": 2900,
     },
+    "Locate Triulzi": {
+        "omi_min": 1300,
+        "omi_max": 2000,
+        "da_ristrutturare_mq": 1400,
+        "exit_price_mq": 2200,
+    },
+    "San Donato Milanese": {
+        "omi_min": 2400,
+        "omi_max": 3600,
+        "da_ristrutturare_mq": 2600,
+        "exit_price_mq": 3800,
+    },
+    "San Giuliano Milanese": {
+        "omi_min": 1700,
+        "omi_max": 2600,
+        "da_ristrutturare_mq": 1900,
+        "exit_price_mq": 2800,
+    },
+    "Salvanesco": {
+        "omi_min": 1500,
+        "omi_max": 2300,
+        "da_ristrutturare_mq": 1700,
+        "exit_price_mq": 2500,
+    },
+    "Rogoredo": {
+        "omi_min": 2500,
+        "omi_max": 3800,
+        "da_ristrutturare_mq": 2800,
+        "exit_price_mq": 4000,
+    },
+    "Via Forlanini": {
+        "omi_min": 2200,
+        "omi_max": 3600,
+        "da_ristrutturare_mq": 2600,
+        "exit_price_mq": 3800,
+    },
+    "Scalo Porta Romana": {
+        "omi_min": 3500,
+        "omi_max": 5800,
+        "da_ristrutturare_mq": 4200,
+        "exit_price_mq": 5800,
+    },
+    "Porta Romana": {
+        "omi_min": 3500,
+        "omi_max": 5800,
+        "da_ristrutturare_mq": 4200,
+        "exit_price_mq": 5800,
+    },
+    "Piazzale Lodi": {
+        "omi_min": 3000,
+        "omi_max": 4800,
+        "da_ristrutturare_mq": 3500,
+        "exit_price_mq": 4900,
+    },
+    "Bocconi": {
+        "omi_min": 3600,
+        "omi_max": 5500,
+        "da_ristrutturare_mq": 4000,
+        "exit_price_mq": 5600,
+    },
+    "Ticinese": {
+        "omi_min": 3700,
+        "omi_max": 5600,
+        "da_ristrutturare_mq": 4100,
+        "exit_price_mq": 5700,
+    },
+    "Navigli": {
+        "omi_min": 3600,
+        "omi_max": 5500,
+        "da_ristrutturare_mq": 4000,
+        "exit_price_mq": 5600,
+    },
+    "Viale Papiniano": {
+        "omi_min": 3600,
+        "omi_max": 5500,
+        "da_ristrutturare_mq": 4000,
+        "exit_price_mq": 5600,
+    },
+    "Via Capecelatro": {
+        "omi_min": 2500,
+        "omi_max": 3800,
+        "da_ristrutturare_mq": 2800,
+        "exit_price_mq": 4000,
+    },
+    "San Siro": {
+        "omi_min": 2400,
+        "omi_max": 3700,
+        "da_ristrutturare_mq": 2700,
+        "exit_price_mq": 3900,
+    },
+    "Porta Genova": {
+        "omi_min": 3700,
+        "omi_max": 5600,
+        "da_ristrutturare_mq": 4100,
+        "exit_price_mq": 5700,
+    },
+    "Corsico": {
+        "omi_min": 1700,
+        "omi_max": 2600,
+        "da_ristrutturare_mq": 1900,
+        "exit_price_mq": 2850,
+    },
+    "Trezzano sul Naviglio": {
+        "omi_min": 1500,
+        "omi_max": 2100,
+        "da_ristrutturare_mq": 1900,
+        "exit_price_mq": 2800,
+    },
+    "Buccinasco": {
+        "omi_min": 2100,
+        "omi_max": 3200,
+        "da_ristrutturare_mq": 2400,
+        "exit_price_mq": 3500,
+    },
+    "Assago": {
+        "omi_min": 2000,
+        "omi_max": 3100,
+        "da_ristrutturare_mq": 2300,
+        "exit_price_mq": 3400,
+    },
+    "Moirago": {
+        "omi_min": 1500,
+        "omi_max": 2300,
+        "da_ristrutturare_mq": 1700,
+        "exit_price_mq": 2500,
+    },
+    "Via Tabacchi": {
+        "omi_min": 3400,
+        "omi_max": 5200,
+        "da_ristrutturare_mq": 3800,
+        "exit_price_mq": 5300,
+    },
+    "Famagosta": {
+        "omi_min": 2400,
+        "omi_max": 3700,
+        "da_ristrutturare_mq": 2700,
+        "exit_price_mq": 3900,
+    },
+    "Piazza Napoli": {
+        "omi_min": 3000,
+        "omi_max": 4800,
+        "da_ristrutturare_mq": 3500,
+        "exit_price_mq": 4900,
+    },
+    "Barona": {
+        "omi_min": 2300,
+        "omi_max": 3600,
+        "da_ristrutturare_mq": 2600,
+        "exit_price_mq": 3800,
+    },
     "Rozzano": {
         "omi_min": 1400,
         "omi_max": 1900,
         "da_ristrutturare_mq": 1750,
         "exit_price_mq": 2650,
     },
-    "Lacchiarella": {
+    "Zibido San Giacomo": {
+        "omi_min": 1300,
+        "omi_max": 2100,
+        "da_ristrutturare_mq": 1500,
+        "exit_price_mq": 2300,
+    },
+    "San Pietro Cusico": {
         "omi_min": 1200,
-        "omi_max": 1650,
-        "da_ristrutturare_mq": 1450,
-        "exit_price_mq": 2350,
+        "omi_max": 1950,
+        "da_ristrutturare_mq": 1400,
+        "exit_price_mq": 2150,
+    },
+    "Badile": {
+        "omi_min": 1200,
+        "omi_max": 1950,
+        "da_ristrutturare_mq": 1400,
+        "exit_price_mq": 2150,
     },
     "Binasco": {
         "omi_min": 1100,
@@ -77,11 +215,59 @@ ZONE_BENCHMARKS = {
         "da_ristrutturare_mq": 1350,
         "exit_price_mq": 2200,
     },
-    "Sizziano": {
+    "Noviglio": {
+        "omi_min": 1200,
+        "omi_max": 2000,
+        "da_ristrutturare_mq": 1400,
+        "exit_price_mq": 2200,
+    },
+    "Santa Corinna": {
+        "omi_min": 1150,
+        "omi_max": 1900,
+        "da_ristrutturare_mq": 1350,
+        "exit_price_mq": 2100,
+    },
+    "Vernate": {
+        "omi_min": 1100,
+        "omi_max": 1850,
+        "da_ristrutturare_mq": 1300,
+        "exit_price_mq": 2050,
+    },
+    "Casarile": {
+        "omi_min": 1050,
+        "omi_max": 1800,
+        "da_ristrutturare_mq": 1250,
+        "exit_price_mq": 2000,
+    },
+    "Lacchiarella": {
+        "omi_min": 1200,
+        "omi_max": 1650,
+        "da_ristrutturare_mq": 1450,
+        "exit_price_mq": 2350,
+    },
+    "Siziano": {
         "omi_min": 1050,
         "omi_max": 1500,
         "da_ristrutturare_mq": 1300,
         "exit_price_mq": 2100,
+    },
+    "Giussago": {
+        "omi_min": 1050,
+        "omi_max": 1800,
+        "da_ristrutturare_mq": 1250,
+        "exit_price_mq": 2000,
+    },
+    "Giovenzano": {
+        "omi_min": 1000,
+        "omi_max": 1750,
+        "da_ristrutturare_mq": 1200,
+        "exit_price_mq": 1950,
+    },
+    "Torriano": {
+        "omi_min": 1000,
+        "omi_max": 1750,
+        "da_ristrutturare_mq": 1200,
+        "exit_price_mq": 1950,
     },
     "Pavia": {
         "omi_min": 1150,
@@ -94,6 +280,18 @@ ZONE_BENCHMARKS = {
         "omi_max": 3000,
         "da_ristrutturare_mq": 2200,
         "exit_price_mq": 3300,
+    },
+    "Settimo Milanese": {
+        "omi_min": 1700,
+        "omi_max": 2600,
+        "da_ristrutturare_mq": 1950,
+        "exit_price_mq": 2900,
+    },
+    "Cusago": {
+        "omi_min": 1800,
+        "omi_max": 2700,
+        "da_ristrutturare_mq": 2000,
+        "exit_price_mq": 3000,
     },
 }
 
