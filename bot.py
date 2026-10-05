@@ -3,13 +3,25 @@ import json
 import os
 import requests
 
-# Matrice completa di riferimento reale per tutte le località target (Bilocali: Prezzi al mq)
+# Matrice completa di riferimento reale per tutte le zone e quartieri target (Bilocali: Prezzi al mq)
 ZONE_BENCHMARKS = {
-    "Milano": {
+    "Milano (Generale)": {
         "omi_min": 2500,
         "omi_max": 4500,
         "da_ristrutturare_mq": 3200,
         "exit_price_mq": 4800,
+    },
+    "Porta Romana / Scalo Porta Romana": {
+        "omi_min": 3500,
+        "omi_max": 5800,
+        "da_ristrutturare_mq": 4200,
+        "exit_price_mq": 5800,
+    },
+    "Viale Forlanini": {
+        "omi_min": 2200,
+        "omi_max": 3600,
+        "da_ristrutturare_mq": 2600,
+        "exit_price_mq": 3800,
     },
     "Milano Cintura Sud": {
         "omi_min": 2200,
@@ -77,11 +89,16 @@ ZONE_BENCHMARKS = {
         "da_ristrutturare_mq": 1500,
         "exit_price_mq": 2450,
     },
+    "Arenzano": {
+        "omi_min": 1800,
+        "omi_max": 3000,
+        "da_ristrutturare_mq": 2200,
+        "exit_price_mq": 3300,
+    },
 }
 
 
 def send_telegram_summary(deals):
-  """Invia la notifica Telegram con link cliccabili e calcoli di margine reali."""
   token = os.environ.get("TELEGRAM_BOT_TOKEN")
   chat_id = os.environ.get("TELEGRAM_CHAT_ID")
   streamlit_url = os.environ.get(
@@ -108,10 +125,9 @@ def send_telegram_summary(deals):
     p = d.get("prezzo", 0)
     sup = d.get("superficie_mq", 60)
 
-    # Calcolo automatico del margine MNP stimato basato sui benchmark reali
     bench = ZONE_BENCHMARKS.get(z, {"exit_price_mq": 2500})
     est_exit = sup * bench["exit_price_mq"]
-    costo_ristrutturazione = sup * 500  # Stima costi standard al mq
+    costo_ristrutturazione = sup * 500
     margine_stimato = est_exit - p - costo_ristrutturazione
 
     link = html.escape(str(d.get("link", streamlit_url)))
