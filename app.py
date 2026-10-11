@@ -8,51 +8,35 @@ st.set_page_config(
 )
 st.title("🎯 Valutatore Micro-Zona Dinamico & Foglio di Calcolo Flipping")
 
-# --- LETTURA PARAMETRI DA URL (PASSATI DA TELEGRAM) O DEFAULT ---
-query_params = st.query_params
-default_indirizzo = query_params.get("indirizzo", "Via Ripamonti 88, Milano")
-default_mq = int(query_params.get("mq", 120))
-default_raggio = int(query_params.get("raggio", 800))
-default_prezzo = float(query_params.get("prezzo", 220000))
-
-# --- SIDEBAR / FINESTRA DI MODIFICA PARAMETRI ---
+# --- INTERFACCIA DI INPUT DINAMICA ---
 st.sidebar.header("📍 Parametri Immobile & Analisi")
-indirizzo_civico = st.sidebar.text_input(
-    "Indirizzo Civico e Città", value=default_indirizzo
-)
 
-col_r1, col_r2 = st.sidebar.columns(2)
-with col_r1:
+with st.sidebar.form("form_analisi_dinamica"):
+  indirizzo_input = st.text_input(
+      "Indirizzo, Civico e Città",
+      value="Via Capessoni 11, Pavia",
+      placeholder="Es. Via Capessoni 11, Pavia",
+  )
   superficie_mq = st.number_input(
-      "Superficie (mq)",
-      min_value=50,
-      max_value=250,
-      value=default_mq,
-      step=5,
-      help="Modificabile liberamente (es. Trilocale 120 mq)",
+      "Superficie (mq)", min_value=50, max_value=300, value=120, step=5
   )
-with col_r2:
   raggio_metri = st.selectbox(
-      "Raggio d'azione", options=[500, 800, 1000], index=[500, 800, 1000].index(default_raggio) if default_raggio in [500, 800, 1000] else 1
+      "Raggio d'azione", options=[500, 800, 1000], index=1
+  )
+  prezzo_compra = st.number_input(
+      "Prezzo d'Acquisto / Asta (€)", value=180000, step=5000
+  )
+  costo_ristr_mq = st.number_input(
+      "Costo Ristrutturazione (€/mq)", value=600, step=50
+  )
+  is_frazionamento = st.checkbox(
+      "Simula Frazionamento (es. Trilocale -> 2 Bilocali)", value=False
   )
 
-prezzo_compra = st.sidebar.number_input(
-    "Prezzo d'Acquisto / Asta (€)", value=default_prezzo, step=5000
-)
-costo_ristr_mq = st.sidebar.number_input(
-    "Costo Ristrutturazione (€/mq)", value=600, step=50
-)
-is_frazionamento = st.sidebar.checkbox(
-    "Simula Frazionamento (es. Trilocale -> 2 Bilocali)", value=False
-)
+  btn_analizza = st.form_submit_button("🚀 Calcola Analisi e Spread")
 
-# --- MATRICE MULTI-PORTALE E DATI COMPARATIVI ---
-st.subheader(
-    f"📊 Confronto Valori Medi Portali & Banche Dati (Raggio: {raggio_metri}m)"
-)
-st.caption(f"Immobile analizzato: **{indirizzo_civico}** | **{superficie_mq} mq**")
-
-# Simulatore di benchmark calibrato su raggio e mq
+# --- MOTORE DI CALCOLO COMPARATIVO MULTI-PORTALE ---
+# Fattori di calibrazione in base al raggio e alla metratura
 f_raggio = 1.0 if raggio_metri == 800 else (0.95 if raggio_metri > 800 else 1.05)
 f_taglio = 0.98 if superficie_mq > 110 else 1.02
 
@@ -91,11 +75,18 @@ df_portali["Spread (€/mq)"] = (
     df_portali["Ristrutturato (€/mq)"] - df_portali["Da Ristrutturare (€/mq)"]
 )
 
+st.subheader(
+    f"📊 Confronto Valori Medi Portali & Banche Dati (Raggio: {raggio_metri}m)"
+)
+st.caption(
+    f"Immobile analizzato: **{indirizzo_input}** | **{superficie_mq} mq**"
+)
+
 st.dataframe(df_portali, use_container_width=True)
 
 # --- FOGLIO DI CALCOLO OPERATIVO & SEMAFORI ---
 st.divider()
-st.subheader("🧮 Foglio di Calcolo & Valutazione Spread")
+st.subheader("🧮 Foglio di Calcolo Operazione & Valutazione Spread")
 
 media_da_ristr_mercato = df_portali["Da Ristrutturare (€/mq)"].mean()
 media_ristr_mercato = df_portali["Ristrutturato (€/mq)"].mean()
@@ -107,7 +98,7 @@ if is_frazionamento:
   prezzo_uscita_mq = media_ristr_mercato * 1.12
   st.info(
       "ℹ️ **Frazionamento Attivo:** Applicato premium +12% sul prezzo di"
-      " vendita al mq per la creazione di unità più piccole."
+      " vendita al mq per la creazione di unità più compatte."
   )
 else:
   prezzo_uscita_mq = media_ristr_mercato
@@ -119,7 +110,7 @@ roi_percentuale = (
     margine_netto_mnp / (prezzo_compra + costo_totale_ristr)
 ) * 100
 
-# Semafori Spread
+# Logica Semaforica dei Colori
 if spread_medio > 1200:
   semaforo_box = "🌟 **SPREAD ORO / ECCEZIONALE** (> 1.200 €/mq)"
   st_color = st.success
