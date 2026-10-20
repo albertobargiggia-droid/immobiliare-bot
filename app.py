@@ -3,6 +3,7 @@ import os
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import pandas as pd
+from PIL import Image, ImageOps
 import pypdfium2 as pdfium
 import streamlit as st
 
@@ -32,35 +33,54 @@ is_frazionamento = st.sidebar.checkbox(
     "Simula Frazionamento (es. Trilocale -> 2 Bilocali)", value=True
 )
 
-# --- UPLOAD PLANIMETRIA STATO DI FATTO (SCREENSHOT / PNG / JPG / PDF) ---
-st.subheader("🖼️ 1. Carica la Piantina (Screenshot o PDF Catastale)")
+# --- UPLOAD PLANIMETRIA STATO DI FATTO (SUPER PERMESSIVO) ---
+st.subheader("🖼️ 1. Carica la Piantina (Screenshot, Immagine o PDF)")
 uploaded_file = st.file_uploader(
-    "Carica qui lo Screenshot della piantina o il file PDF catastale",
-    type=["png", "jpg", "jpeg", "pdf"],
+    "Trascina qui lo Screenshot (PNG, JPG, WEBP, HEIC) o il PDF catastale",
+    type=[
+        "png",
+        "jpg",
+        "jpeg",
+        "webp",
+        "heic",
+        "pdf",
+        "PNG",
+        "JPG",
+        "JPEG",
+        "WEBP",
+        "PDF",
+    ],
 )
 
 if uploaded_file is not None:
-  file_extension = uploaded_file.name.split(".")[-1].lower()
+  try:
+    file_name = uploaded_file.name.lower()
 
-  if file_extension == "pdf":
-    # Conversione della prima pagina del PDF in un'immagine per visualizzazione immediata
-    pdf = pdfium.PdfDocument(uploaded_file)
-    page = pdf[0]
-    image = page.render(scale=2).to_pil()
-    st.image(
-        image,
-        caption=f"Planimetria estratta da PDF per {indirizzo_input}",
-        use_container_width=True,
+    if file_name.endswith(".pdf"):
+      # Elaborazione PDF
+      pdf = pdfium.PdfDocument(uploaded_file)
+      page = pdf[0]
+      image = page.render(scale=2).to_pil()
+      st.image(
+          image,
+          caption=f"Planimetria estratta da PDF per {indirizzo_input}",
+          use_container_width=True,
+      )
+      st.success("✅ File PDF caricato e visualizzato correttamente!")
+    else:
+      # Elaborazione Screenshot / Immagine con PIL
+      img = Image.open(uploaded_file)
+      img = ImageOps.exif_transpose(img)  # Corregge eventuale rotazione foto
+      st.image(
+          img,
+          caption=f"Screenshot / Immagine caricata per {indirizzo_input}",
+          use_container_width=True,
+      )
+      st.success("✅ Screenshot caricato con successo!")
+  except Exception as e:
+    st.error(
+        f"⚠️ Errore durante la visualizzazione dell'immagine. Prova a ridimensionare o salvare lo screenshot come PNG/JPG standard. Dettaglio: {e}"
     )
-    st.success("✅ File PDF elaborato e visualizzato correttamente!")
-  else:
-    # Visualizzazione per screenshot / immagini (PNG, JPG, JPEG)
-    st.image(
-        uploaded_file,
-        caption=f"Screenshot / Immagine per {indirizzo_input}",
-        use_container_width=True,
-    )
-    st.success("✅ Screenshot / Immagine caricata correttamente!")
 
 # --- MATRICE MULTI-PORTALE E BANCHE DATI ---
 st.divider()
