@@ -1,7 +1,9 @@
+import io
 import os
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import pandas as pd
+import pypdfium2 as pdfium
 import streamlit as st
 
 st.set_page_config(
@@ -30,7 +32,42 @@ is_frazionamento = st.sidebar.checkbox(
     "Simula Frazionamento (es. Trilocale -> 2 Bilocali)", value=True
 )
 
+# --- UPLOAD PLANIMETRIA STATO DI FATTO (SCREENSHOT / PNG / JPG / PDF) ---
+st.subheader("🖼️ 1. Carica la Piantina (Screenshot o PDF Catastale)")
+uploaded_file = st.file_uploader(
+    "Carica qui lo Screenshot della piantina o il file PDF catastale",
+    type=["png", "jpg", "jpeg", "pdf"],
+)
+
+if uploaded_file is not None:
+  file_extension = uploaded_file.name.split(".")[-1].lower()
+
+  if file_extension == "pdf":
+    # Conversione della prima pagina del PDF in un'immagine per visualizzazione immediata
+    pdf = pdfium.PdfDocument(uploaded_file)
+    page = pdf[0]
+    image = page.render(scale=2).to_pil()
+    st.image(
+        image,
+        caption=f"Planimetria estratta da PDF per {indirizzo_input}",
+        use_container_width=True,
+    )
+    st.success("✅ File PDF elaborato e visualizzato correttamente!")
+  else:
+    # Visualizzazione per screenshot / immagini (PNG, JPG, JPEG)
+    st.image(
+        uploaded_file,
+        caption=f"Screenshot / Immagine per {indirizzo_input}",
+        use_container_width=True,
+    )
+    st.success("✅ Screenshot / Immagine caricata correttamente!")
+
 # --- MATRICE MULTI-PORTALE E BANCHE DATI ---
+st.divider()
+st.subheader(
+    f"📊 2. Confronto Prezzi Medi Portali & Banche Dati (Raggio: {raggio_metri}m)"
+)
+
 f_raggio = (
     1.0 if raggio_metri == 800 else (0.95 if raggio_metri > 800 else 1.05)
 )
@@ -71,9 +108,6 @@ df_portali["Spread (€/mq)"] = (
     df_portali["Ristrutturato (€/mq)"] - df_portali["Da Ristrutturare (€/mq)"]
 )
 
-st.subheader(
-    f"📊 1. Confronto Prezzi Medi Portali & Banche Dati (Raggio: {raggio_metri}m)"
-)
 st.caption(
     f"Immobile analizzato: **{indirizzo_input}** | **{superficie_totale} mq**"
 )
@@ -259,7 +293,7 @@ def genera_layout_grafico_2d(mq_totali):
 
 
 st.divider()
-st.subheader("📐 2. Progetto Grafico 2D del Frazionamento Ottimizzato")
+st.subheader("📐 3. Progetto Grafico 2D del Frazionamento Ottimizzato")
 fig_layout = genera_layout_grafico_2d(superficie_totale)
 st.pyplot(fig_layout)
 
@@ -275,7 +309,7 @@ with open("layout_frazionamento.png", "rb") as file:
 
 # --- CONTO ECONOMICO E SPREAD ---
 st.divider()
-st.subheader("🧮 3. Foglio di Calcolo Operazione & Spread")
+st.subheader("🧮 4. Foglio di Calcolo Operazione & Spread")
 
 media_da_ristr = df_portali["Da Ristrutturare (€/mq)"].mean()
 media_ristr = df_portali["Ristrutturato (€/mq)"].mean()
