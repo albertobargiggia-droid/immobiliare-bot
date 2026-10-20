@@ -1,44 +1,40 @@
-import json
 import os
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Valutatore Micro-Zona & Frazionamenti", layout="wide"
+    page_title="Frazionatore & Layout Grafico 2D", layout="wide"
 )
-st.title("🎯 Valutatore Micro-Zona Dinamico & Foglio di Calcolo Flipping")
+st.title("🎯 Frazionatore Immobiliare & Generatore di Layout Grafico 2D")
 
-# --- INTERFACCIA DI INPUT DINAMICA ---
+# --- SIDEBAR PARAMETRI ---
 st.sidebar.header("📍 Parametri Immobile & Analisi")
+indirizzo_input = st.sidebar.text_input(
+    "Indirizzo, Civico e Città", value="Via Capessoni 11, Pavia"
+)
+superficie_totale = st.sidebar.number_input(
+    "Superficie Totale (mq)", min_value=40, max_value=300, value=120, step=5
+)
+raggio_metri = st.sidebar.selectbox(
+    "Raggio d'azione", options=[500, 800, 1000], index=1
+)
+prezzo_acquisto = st.sidebar.number_input(
+    "Prezzo d'Acquisto / Asta (€)", value=180000, step=5000
+)
+costo_ristr_mq = st.sidebar.number_input(
+    "Costo Ristrutturazione / Frazionamento (€/mq)", value=750, step=50
+)
+is_frazionamento = st.sidebar.checkbox(
+    "Simula Frazionamento (es. Trilocale -> 2 Bilocali)", value=True
+)
 
-with st.sidebar.form("form_analisi_dinamica"):
-  indirizzo_input = st.text_input(
-      "Indirizzo, Civico e Città",
-      value="Via Capessoni 11, Pavia",
-      placeholder="Es. Via Capessoni 11, Pavia",
-  )
-  superficie_mq = st.number_input(
-      "Superficie (mq)", min_value=50, max_value=300, value=120, step=5
-  )
-  raggio_metri = st.selectbox(
-      "Raggio d'azione", options=[500, 800, 1000], index=1
-  )
-  prezzo_compra = st.number_input(
-      "Prezzo d'Acquisto / Asta (€)", value=180000, step=5000
-  )
-  costo_ristr_mq = st.number_input(
-      "Costo Ristrutturazione (€/mq)", value=600, step=50
-  )
-  is_frazionamento = st.checkbox(
-      "Simula Frazionamento (es. Trilocale -> 2 Bilocali)", value=False
-  )
-
-  btn_analizza = st.form_submit_button("🚀 Calcola Analisi e Spread")
-
-# --- MOTORE DI CALCOLO COMPARATIVO MULTI-PORTALE ---
-# Fattori di calibrazione in base al raggio e alla metratura
-f_raggio = 1.0 if raggio_metri == 800 else (0.95 if raggio_metri > 800 else 1.05)
-f_taglio = 0.98 if superficie_mq > 110 else 1.02
+# --- MATRICE MULTI-PORTALE E BANCHE DATI ---
+f_raggio = (
+    1.0 if raggio_metri == 800 else (0.95 if raggio_metri > 800 else 1.05)
+)
+f_taglio = 0.98 if superficie_totale > 110 else 1.02
 
 base_da_ristr = int(2300 * f_raggio * f_taglio)
 base_ristr = int(3850 * f_raggio)
@@ -76,41 +72,233 @@ df_portali["Spread (€/mq)"] = (
 )
 
 st.subheader(
-    f"📊 Confronto Valori Medi Portali & Banche Dati (Raggio: {raggio_metri}m)"
+    f"📊 1. Confronto Prezzi Medi Portali & Banche Dati (Raggio: {raggio_metri}m)"
 )
 st.caption(
-    f"Immobile analizzato: **{indirizzo_input}** | **{superficie_mq} mq**"
+    f"Immobile analizzato: **{indirizzo_input}** | **{superficie_totale} mq**"
 )
-
 st.dataframe(df_portali, use_container_width=True)
 
-# --- FOGLIO DI CALCOLO OPERATIVO & SEMAFORI ---
+
+# --- GENERATORE DI LAYOUT GRAFICO 2D ---
+def genera_layout_grafico_2d(mq_totali):
+  fig, ax = plt.subplots(figsize=(10, 5.5))
+  ax.set_facecolor("#f8f9fa")
+  ax.set_xlim(-1, 13)
+  ax.set_ylim(-1, 8)
+  ax.set_aspect("equal")
+  ax.axis("off")
+
+  # Perimetro esterno
+  perimetro = patches.Rectangle(
+      (0, 0), 12, 7, linewidth=4, edgecolor="black", facecolor="none"
+  )
+  ax.add_patch(perimetro)
+
+  # Muro divisorio centrale (frazionamento)
+  muro_divisorio = patches.Rectangle(
+      (5.8, 0),
+      0.4,
+      7,
+      linewidth=1,
+      edgecolor="darkred",
+      facecolor="red",
+      alpha=0.7,
+  )
+  ax.add_patch(muro_divisorio)
+
+  # Unità A (Sinistra)
+  bagno_a = patches.Rectangle(
+      (0, 4.5), 3.5, 2.5, linewidth=2, edgecolor="#333", facecolor="#e3f2fd"
+  )
+  ax.add_patch(bagno_a)
+  ax.text(
+      1.75,
+      5.75,
+      "BAGNO A\n(~5.5 mq)",
+      ha="center",
+      va="center",
+      fontsize=8,
+      weight="bold",
+  )
+
+  camera_a = patches.Rectangle(
+      (0, 0), 3.5, 4.5, linewidth=2, edgecolor="#333", facecolor="#fff3e0"
+  )
+  ax.add_patch(camera_a)
+  ax.text(
+      1.75,
+      2.25,
+      "CAMERA A\n(~14.5 mq)",
+      ha="center",
+      va="center",
+      fontsize=9,
+      weight="bold",
+  )
+
+  soggiorno_a = patches.Rectangle(
+      (3.5, 0), 2.3, 7, linewidth=2, edgecolor="#333", facecolor="#e8f5e9"
+  )
+  ax.add_patch(soggiorno_a)
+  ax.text(
+      4.65,
+      3.5,
+      "SOGGIORNO +\nANGOLO COTTURA A\n(~22 mq)",
+      ha="center",
+      va="center",
+      fontsize=8,
+      weight="bold",
+  )
+
+  # Unità B (Destra)
+  soggiorno_b = patches.Rectangle(
+      (6.2, 0), 2.3, 7, linewidth=2, edgecolor="#333", facecolor="#e8f5e9"
+  )
+  ax.add_patch(soggiorno_b)
+  ax.text(
+      7.35,
+      3.5,
+      "SOGGIORNO +\nANGOLO COTTURA B\n(~22 mq)",
+      ha="center",
+      va="center",
+      fontsize=8,
+      weight="bold",
+  )
+
+  camera_b = patches.Rectangle(
+      (8.5, 0), 3.5, 4.5, linewidth=2, edgecolor="#333", facecolor="#fff3e0"
+  )
+  ax.add_patch(camera_b)
+  ax.text(
+      10.25,
+      2.25,
+      "CAMERA B\n(~15 mq)",
+      ha="center",
+      va="center",
+      fontsize=9,
+      weight="bold",
+  )
+
+  bagno_b = patches.Rectangle(
+      (8.5, 4.5), 3.5, 2.5, linewidth=2, edgecolor="#333", facecolor="#e3f2fd"
+  )
+  ax.add_patch(bagno_b)
+  ax.text(
+      10.25,
+      5.75,
+      "BAGNO B\n(~6 mq)",
+      ha="center",
+      va="center",
+      fontsize=8,
+      weight="bold",
+  )
+
+  # Finestre e Ingressi
+  finestra1 = patches.Rectangle(
+      (1, 6.9), 1.5, 0.2, facecolor="#00bcd4", edgecolor="black"
+  )
+  finestra2 = patches.Rectangle(
+      (9.5, 6.9), 1.5, 0.2, facecolor="#00bcd4", edgecolor="black"
+  )
+  ingresso_a = patches.Rectangle(
+      (4.2, -0.1), 1, 0.2, facecolor="#4caf50", edgecolor="black"
+  )
+  ingresso_b = patches.Rectangle(
+      (6.8, -0.1), 1, 0.2, facecolor="#4caf50", edgecolor="black"
+  )
+
+  ax.add_patch(finestra1)
+  ax.add_patch(finestra2)
+  ax.add_patch(ingresso_a)
+  ax.add_patch(ingresso_b)
+
+  ax.text(
+      1.75,
+      7.3,
+      "R.A.I. Ok",
+      ha="center",
+      fontsize=7,
+      color="#00838f",
+      weight="bold",
+  )
+  ax.text(
+      10.25,
+      7.3,
+      "R.A.I. Ok",
+      ha="center",
+      fontsize=7,
+      color="#00838f",
+      weight="bold",
+  )
+  ax.text(
+      4.7,
+      -0.5,
+      "Ingresso A",
+      ha="center",
+      fontsize=8,
+      color="#2e7d32",
+      weight="bold",
+  )
+  ax.text(
+      7.3,
+      -0.5,
+      "Ingresso B",
+      ha="center",
+      fontsize=8,
+      color="#2e7d32",
+      weight="bold",
+  )
+
+  plt.title(
+      f"PROGETTO DI FRAZIONAMENTO IN 2 BILOCALI (Totale: {mq_totali} mq)",
+      fontsize=11,
+      weight="bold",
+      pad=15,
+  )
+  return fig
+
+
 st.divider()
-st.subheader("🧮 Foglio di Calcolo Operazione & Valutazione Spread")
+st.subheader("📐 2. Progetto Grafico 2D del Frazionamento Ottimizzato")
+fig_layout = genera_layout_grafico_2d(superficie_totale)
+st.pyplot(fig_layout)
 
-media_da_ristr_mercato = df_portali["Da Ristrutturare (€/mq)"].mean()
-media_ristr_mercato = df_portali["Ristrutturato (€/mq)"].mean()
-spread_medio = media_ristr_mercato - media_da_ristr_mercato
+# Pulsante download immagine cantiere
+fig_layout.savefig("layout_frazionamento.png", dpi=300, bbox_inches="tight")
+with open("layout_frazionamento.png", "rb") as file:
+  st.download_button(
+      label="📥 Scarica Disegno Tecnico 2D (PNG 300 DPI) per Cantiere",
+      data=file,
+      file_name=f"layout_{indirizzo_input.replace(', ', '_').replace(' ', '_')}.png",
+      mime="image/png",
+  )
 
-prezzo_compra_mq = prezzo_compra / superficie_mq
+# --- CONTO ECONOMICO E SPREAD ---
+st.divider()
+st.subheader("🧮 3. Foglio di Calcolo Operazione & Spread")
+
+media_da_ristr = df_portali["Da Ristrutturare (€/mq)"].mean()
+media_ristr = df_portali["Ristrutturato (€/mq)"].mean()
+spread_medio = media_ristr - media_da_ristr
+
+prezzo_compra_mq = prezzo_acquisto / superficie_totale
 
 if is_frazionamento:
-  prezzo_uscita_mq = media_ristr_mercato * 1.12
+  prezzo_uscita_mq = media_ristr * 1.14
   st.info(
-      "ℹ️ **Frazionamento Attivo:** Applicato premium +12% sul prezzo di"
-      " vendita al mq per la creazione di unità più compatte."
+      "ℹ️ **Frazionamento Attivo:** Applicato premium +14% al mq per la"
+      " creazione di 2 unità bilocali compact."
   )
 else:
-  prezzo_uscita_mq = media_ristr_mercato
+  prezzo_uscita_mq = media_ristr
 
-ricavo_totale = superficie_mq * prezzo_uscita_mq
-costo_totale_ristr = superficie_mq * costo_ristr_mq
-margine_netto_mnp = ricavo_totale - prezzo_compra - costo_totale_ristr
+ricavo_totale = superficie_totale * prezzo_uscita_mq
+costo_totale_ristr = superficie_totale * costo_ristr_mq
+margine_netto_mnp = ricavo_totale - prezzo_acquisto - costo_totale_ristr
 roi_percentuale = (
-    margine_netto_mnp / (prezzo_compra + costo_totale_ristr)
+    margine_netto_mnp / (prezzo_acquisto + costo_totale_ristr)
 ) * 100
 
-# Logica Semaforica dei Colori
 if spread_medio > 1200:
   semaforo_box = "🌟 **SPREAD ORO / ECCEZIONALE** (> 1.200 €/mq)"
   st_color = st.success
